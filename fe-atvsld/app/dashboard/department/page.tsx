@@ -1,9 +1,9 @@
-import Image from "next/image";
+import React from 'react'
 
-export default function Home() {
+export default function page() {
   return (
     <div className="flex items-center justify-center min-h-screen p-24 text-xl text-gray-700">
-      Home Content Goes Here
+      Department Management
     </div>
   );
 }
