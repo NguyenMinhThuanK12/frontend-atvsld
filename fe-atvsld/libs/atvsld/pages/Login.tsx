@@ -16,11 +16,16 @@ import {
   validatePassword,
   isEmpty,
 } from "@/libs/atvsld/services/validation/globalValidation";
+import { getDepartments } from "../services/api/departmentApi";
+import { login } from "../services/api/authApi";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [agency, setAgency] = useState("hcm"); // Giá trị mặc định cho Đơn vị
+  const [agency, setAgency] = useState("");
+  const [agencyOptions, setAgencyOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
   const [rememberMe, setRememberMe] = useState(false);
   const [alert, setAlert] = useState<{
     content: string;
@@ -33,6 +38,27 @@ export default function Login() {
   const [passwordError, setPasswordError] = useState(false);
 
   useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const departments = await getDepartments();
+        const options = departments.map((department) => ({
+          value: department.id.toString(),
+          label: department.name,
+        }));
+        setAgencyOptions(options);
+        if (options.length > 0) setAgency(options[0].value);
+      } catch (error: any) {
+        console.error("Error fetching departments:", error.message);
+        setAlert({
+          content: "Không thể tải danh sách đơn vị. Vui lòng thử lại.",
+          type: "error",
+        });
+        setTimeout(() => setAlert(null), 2000);
+      }
+    };
+
+    fetchDepartments();
+
     const logoutStatus = searchParams.get("logout");
     if (logoutStatus === "success") {
       setAlert({
@@ -42,7 +68,7 @@ export default function Login() {
     }
   }, [searchParams]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const fields = {
       username: {
@@ -80,18 +106,47 @@ export default function Login() {
       return;
     }
 
-    router.push("/dashboard/department?login=success&username=" + username);
+    // login
+    try {
+      const loginRequest = {
+        departmentId: parseInt(agency),
+        username: username,
+        password: password,
+      };
+
+      // log the login request
+      console.log("Login Request:", loginRequest);
+
+      const response = await login(loginRequest); // send login request
+
+      if (response.authenticated) {
+        setAlert({
+          content: "Đăng nhập thành công!",
+          type: "success",
+        });
+        setTimeout(() => {
+          router.push(
+            `/dashboard/department?login=success&username=${username}&departmentId=${agency}`
+          );
+          setAlert(null), 2000;
+        });
+      } else {
+        throw new Error("Xác thực thất bại");
+      }
+
+    } catch (error: any) {
+      setAlert({
+        content: error.message || "Đăng nhập thất bại. Vui lòng thử lại.",
+        type: "error",
+      });
+      setTimeout(() => setAlert(null), 2000);
+    }
+
   };
 
   const closeAlert = () => {
     setAlert(null);
   };
-
-  const agencyOptions = [
-    { value: "hcm", label: "Ủy ban nhân dân thành phố Hồ Chí Minh" },
-    { value: "hanoi", label: "Ủy ban nhân dân thành phố Hà Nội" },
-    { value: "thuduc", label: "Ủy ban nhân dân thành phố Thủ Đức" },
-  ];
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
@@ -119,7 +174,7 @@ export default function Login() {
       <div className="w-full md:w-1/2 flex flex-col items-center justify-between px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12">
         <div className="w-full max-w-sm sm:max-w-md shadow-lg p-4 rounded-lg bg-white">
           {/* Logo */}
-          <div className="flex h-50 justify-center w-full">
+          <div className="flex h-48 justify-center w-full mb-6">
             <Image
               src="/img/login-logo.jpg"
               alt="Company Logo"
@@ -172,6 +227,7 @@ export default function Login() {
                 label="Nhớ đăng nhập"
               />
               <button
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   setIsForgotPasswordOpen(true);

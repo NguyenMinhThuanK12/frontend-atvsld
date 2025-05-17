@@ -31,6 +31,27 @@ const PrimarySelectField: React.FC<PrimarySelectFieldProps> = ({
       fullWidth
       value={value}
       onChange={onChange}
+      slotProps={{
+        select: {
+          MenuProps: {
+            PaperProps: {
+              sx: {
+                maxHeight: 200, // Giới hạn chiều cao dropdown
+                overflowY: "auto", // Thêm thanh cuộn
+                marginTop: 1, // Khoảng cách nhỏ giữa input và dropdown
+              },
+            },
+            anchorOrigin: {
+              vertical: "bottom",
+              horizontal: "left",
+            },
+            transformOrigin: {
+              vertical: "top",
+              horizontal: "left",
+            },
+          },
+        },
+      }}
       sx={{
         "& .MuiOutlinedInput-root": {
           "& fieldset": {
