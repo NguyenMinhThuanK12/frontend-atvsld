@@ -4,11 +4,11 @@ import { createTheme } from "@mui/material/styles";
 const theme = createTheme({
   palette: {
     primary: {
-      main: "#2962FF", // Khớp với màu primary trong tailwind.config.js
+      main: "#2962FF",
     },
   },
   typography: {
-    fontFamily: "Arial, sans-serif", // Hoặc dùng font từ geist nếu cần
+    fontFamily: "Roboto, Arial, sans-serif",
   },
 });
 

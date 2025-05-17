@@ -9,6 +9,7 @@ interface PrimaryTextFieldProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   required?: boolean;
+  error?: boolean;
 }
 
 const PrimaryTextField: React.FC<PrimaryTextFieldProps> = ({
@@ -17,6 +18,7 @@ const PrimaryTextField: React.FC<PrimaryTextFieldProps> = ({
   onChange,
   placeholder,
   required = false,
+  error = false,
 }) => {
   return (
     <TextField
@@ -31,24 +33,24 @@ const PrimaryTextField: React.FC<PrimaryTextFieldProps> = ({
         marginBottom: "1.5rem",
         "& .MuiOutlinedInput-root": {
           "& fieldset": {
-            borderColor: "#d1d5db", 
+            borderColor: error ? "red" : "#d1d5db",
           },
           "&:hover fieldset": {
-            borderColor: "#9ca3af", 
+            borderColor: error ? "red" : "#9ca3af",
           },
           "&.Mui-focused fieldset": {
-            borderColor: "#3b82f6", 
+            borderColor: error ? "red" : "#3b82f6",
           },
         },
         "& .MuiInputLabel-root": {
-          color: "#6b7280",
+          color: error ? "red" : "#6b7280",
         },
         "& .MuiInputLabel-shrink": {
           transform: "translate(14px, -9px) scale(0.75)",
-          color: "#3b82f6",
+          color: error ? "red" : "#3b82f6",
         },
         "& .MuiInputLabel-asterisk": {
-          display: "none", 
+          display: "none",
         },
       }}
     />

@@ -5,7 +5,7 @@ import PrimaryTextField from "@/libs/core/components/FormFields/primaryTextInput
 import PrimaryButton from "@/libs/core/components/Button/primaryBtn";
 import OutlineButton from "@/libs/core/components/Button/outlineBtn";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
-import EmailIcon from "@mui/icons-material/Email";
+import { validateEmail } from "../services/validation/globalValidation";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 interface ForgotPasswordPopupProps {
@@ -21,6 +21,7 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
     "select-method"
   );
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState(false);
   const [alert, setAlert] = useState<{
     content: string;
     type: "success" | "error" | "warning" | "info";
@@ -28,16 +29,24 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      setAlert({ content: "Gửi email thành công", type: "success" });
-      setTimeout(() => {
-        setAlert(null);
-        onClose();
-      }, 2000);
-    } else {
-      setAlert({ content: "Email chưa đăng ký trong hệ thống. Xin vui lòng thử lại sau", type: "error" });
+    // call function validateEmail
+    if (!validateEmail(email)) {
+      setAlert({
+        content:
+          "Vui lòng nhập đúng định dạng email, định dạng đúng …..@......",
+        type: "error",
+      });
       setTimeout(() => setAlert(null), 2000);
+      setEmailError(true);
+      return;
     }
+
+    setAlert({ content: "Gửi email thành công", type: "success" });
+    
+    setTimeout(() => {
+      setAlert(null);
+      handleClose();
+    }, 2000);
   };
 
   const closeAlert = () => {
@@ -57,14 +66,14 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
   const handleSendZalo = () => {
     setAlert({ content: "Chưa hỗ trợ phương thức này", type: "info" });
     setTimeout(() => setAlert(null), 2000);
-  }
+  };
 
   const handleClose = () => {
     setStep("select-method");
     setEmail("");
     setAlert(null);
     onClose();
-  }
+  };
 
   if (!isOpen) return null;
 
@@ -124,7 +133,8 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Nhập email của bạn"
-                required
+                  required
+                  error={emailError}
               />
               <div className="max-w-[80%] mx-auto">
                 <PrimaryButton content="Gửi yêu cầu" type="submit" />

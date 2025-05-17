@@ -16,6 +16,7 @@ interface PrimaryPasswordFieldProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   required?: boolean;
+  error?: boolean;
 }
 
 const PrimaryPasswordField: React.FC<PrimaryPasswordFieldProps> = ({
@@ -24,6 +25,7 @@ const PrimaryPasswordField: React.FC<PrimaryPasswordFieldProps> = ({
   onChange,
   placeholder,
   required = false,
+  error = false,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -42,21 +44,24 @@ const PrimaryPasswordField: React.FC<PrimaryPasswordFieldProps> = ({
         marginBottom: "1.5rem",
         "& .MuiOutlinedInput-root": {
           "& fieldset": {
-            borderColor: "#d1d5db", // border-gray-300
+            borderColor: error ? "red" : "#d1d5db", // border-gray-300
           },
           "&:hover fieldset": {
-            borderColor: "#9ca3af", // border-gray-400
+            borderColor: error ? "red" : "#9ca3af", // border-gray-400
           },
           "&.Mui-focused fieldset": {
-            borderColor: "#3b82f6", // focus:ring-blue-500
+            borderColor: error ? "red" : "#3b82f6", // focus:ring-blue-500
           },
         },
         "& .MuiInputLabel-root": {
-          color: "#6b7280", // text-gray-500
+          color: error ? "red" : "#6b7280", // text-gray-500
         },
         "& .MuiInputLabel-shrink": {
           transform: "translate(14px, -9px) scale(0.75)", // Floating label
-          color: "#3b82f6", // Blue-500 khi focus
+          color: error ? "red" : "#3b82f6", // Blue-500 khi focus
+        },
+        "& .MuiInputLabel-asterisk": {
+          display: "none", // Ẩn dấu *
         },
       }}
     >

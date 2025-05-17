@@ -12,6 +12,10 @@ import PrimaryCheckbox from "@/libs/core/components/CheckBox/primaryCheckBox";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 import Link from "next/link";
 import ForgotPasswordPopup from "@/libs/atvsld/components/ForgotPasswordPopup";
+import {
+  validatePassword,
+  isEmpty,
+} from "@/libs/atvsld/services/validation/globalValidation";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -25,6 +29,8 @@ export default function Login() {
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const [usernameError, setUsernameError] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
 
   useEffect(() => {
     const logoutStatus = searchParams.get("logout");
@@ -35,12 +41,45 @@ export default function Login() {
       });
     }
   }, [searchParams]);
-  
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempt with:", { username, password, rememberMe });
-    
+    const fields = {
+      username: {
+        value: username.trim(),
+        error: setUsernameError,
+        validate: isEmpty,
+      },
+      password: {
+        value: password.trim(),
+        error: setPasswordError,
+        validate: (value: string) => isEmpty(value) || !validatePassword(value),
+      },
+    };
+
+    // check each fields
+    let hasErrors = false;
+    Object.entries(fields).forEach(([key, { value, error, validate }]) => {
+      const isInvalid = validate(value);
+      error(isInvalid);
+      if (isInvalid) {
+        hasErrors = true;
+      }
+    });
+
+    // display alert
+    if (hasErrors) {
+      setAlert({
+        content:
+          isEmpty(username) || isEmpty(password)
+            ? "Vui lòng nhập đầy đủ thông tin"
+            : "Mật khẩu không đúng định dạng",
+        type: "error",
+      });
+      setTimeout(() => setAlert(null), 2000);
+      return;
+    }
+
     router.push("/dashboard/department?login=success&username=" + username);
   };
 
@@ -55,10 +94,10 @@ export default function Login() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Left Side - Illustration */}
+    <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
+      {/* Left Side - banner */}
       <div className="hidden md:flex md:w-1/2 bg-blue-50 relative">
-        <div className="absolute inset-0 flex items-center justify-center p-12">
+        <div className="absolute inset-0 flex items-center justify-center p-6 md-p-12">
           <div className="w-full h-full relative">
             <Image
               src="/img/candidate-banner-1.png"
@@ -77,17 +116,17 @@ export default function Login() {
       )}
 
       {/* Right Side - Login Form */}
-      <div className="w-full md:w-1/2 flex flex-col items-center justify-between px-6 py-12">
-        <div className="w-full max-w-md shadow-lg p-4">
+      <div className="w-full md:w-1/2 flex flex-col items-center justify-between px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12">
+        <div className="w-full max-w-sm sm:max-w-md shadow-lg p-4 rounded-lg bg-white">
           {/* Logo */}
-          <div className="flex h-50 justify-center mb-14 w-full">
+          <div className="flex h-50 justify-center w-full">
             <Image
               src="/img/login-logo.jpg"
               alt="Company Logo"
               width={0}
               height={0}
               sizes="100vw"
-              className="w-full h-auto"
+              className="w-full h-auto object-contain"
               priority
             />
           </div>
@@ -113,7 +152,7 @@ export default function Login() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="nguyenvanb.stttt"
-              required
+              error={usernameError}
             />
 
             <PrimaryPasswordField
@@ -121,7 +160,7 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••••"
-              required
+              error={passwordError}
             />
 
             <div className="flex items-center justify-between">

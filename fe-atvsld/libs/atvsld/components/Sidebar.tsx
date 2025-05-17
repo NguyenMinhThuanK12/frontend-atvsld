@@ -55,7 +55,7 @@ const Sidebar: React.FC = () => {
 
   const handleLogout = () => {
 
-    router.push("/auth/login?logout=success");
+    router.push("/?logout=success");
   }
 
   const menuItems: MenuItem[] = [
