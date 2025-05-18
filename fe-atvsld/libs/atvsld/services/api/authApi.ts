@@ -2,10 +2,11 @@ import api from "../configuration/axiosConfig";
 import { ApiResponse } from "@/libs/shared/atvsld/dto/response/api-response";
 import { AuthenticationResponse } from "@/libs/shared/atvsld/dto/response/auth-response";
 import { AuthenticationRequest } from "@/libs/shared/atvsld/dto/request/auth-request";
+import { log } from "console";
 
 export const login = async (
   authRequest: AuthenticationRequest
-): Promise<AuthenticationResponse> => {
+): Promise<ApiResponse<AuthenticationResponse>> => {
     // log authRequest to the console
     console.log("Auth Request:", authRequest);
   try {
@@ -13,9 +14,15 @@ export const login = async (
       "/auth/login",
       authRequest
     );
-    return response.data.result;
-  } catch (error: any) {
-    console.error("API Error:", error.message);
+
+    console.log("status:", response.data.status);
+
+    console.log("message:", response.data.message);
+
+    console.log("data:", response.data.data);
+
+    return response.data;
+  } catch (error) {
     throw error;
   }
 };

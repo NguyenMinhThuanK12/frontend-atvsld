@@ -4,10 +4,11 @@ import { ApiResponse } from "@/libs/shared/atvsld/dto/response/api-response";
 
 export const getDepartments = async (): Promise<Department[]> => {
   try {
-    const response = await api.get<ApiResponse<Department[]>>("/departments");
-    return response.data.result;
-  } catch (error: any) {
-    console.error("API Error:", error.message);
+    const response = await api.get<ApiResponse<Department[]>>("/departments/login-list");
+    console.log("API Response:", response.data); // Log the API response
+    
+    return response.data.data || []; // Return the data or an empty array if undefined
+  } catch (error) {
     throw error;
   }
 };

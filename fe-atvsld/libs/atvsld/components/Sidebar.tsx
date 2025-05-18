@@ -1,17 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import {
-  Menu,
-  X,
-  Settings,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { Menu, Settings, ChevronDown, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import Cookies from "js-cookie";
 import SidebarItem from "./SidebarItem";
-import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 
 interface MenuItem {
@@ -31,40 +25,56 @@ const Sidebar: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const showAlert = useCallback(
+    (
+      content: string,
+      type: "success" | "error" | "warning" | "info",
+      duration = 2000
+    ) => {
+      setAlert({ content, type });
+      const timer = setTimeout(() => setAlert(null), duration);
+      return () => clearTimeout(timer);
+    },
+    []
+  );
+
   useEffect(() => {
     const signInStatus = searchParams.get("login");
+
     if (signInStatus === "success") {
-      setAlert({
-        content: "Đăng nhập thành công!",
-        type: "success",
-      });
-      setTimeout(() => {
-        setAlert(null);
-      }, 2000);
-      setUsername(searchParams.get("username") || "");
+      setUsername(Cookies.get("fullname ") || "");
+
+      return showAlert("Đăng nhập thành công!", "success");
     }
-  })
+  }, [searchParams, username, showAlert]);
 
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
+  const toggleSidebar = useCallback(() => {
+    setIsOpen((prev) => !prev);
+  }, []);
 
-  const toggleSystemMenu = () => {
-    setIsSystemOpen(!isSystemOpen);
-  };
+  const toggleSystemMenu = useCallback(() => {
+    setIsSystemOpen((prev) => !prev);
+  }, []);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
+    const allCookies = Cookies.get();
+    Object.keys(allCookies).forEach((cookieName) => {
+      Cookies.remove(cookieName, { path: "/" }); // Remove each cookie, specify path if needed
+    });
+    sessionStorage.clear();
+    router.push("/auth/login?logout=success");
+  }, [router]);
 
-    router.push("/?logout=success");
-  }
-
-  const menuItems: MenuItem[] = [
-    { name: "Cơ quan đơn vị", href: "/co-quan-don-vi" },
-    { name: "Permission", href: "/permission" },
-    { name: "Role", href: "/role" },
-    { name: "User", href: "/user" },
-    { name: "Report configuration", href: "/report-configuration" },
-  ];
+  const menuItems = useMemo(
+    () => [
+      { name: "Cơ quan đơn vị", href: "/co-quan-don-vi" },
+      { name: "Permission", href: "/permission" },
+      { name: "Role", href: "/role" },
+      { name: "User", href: "/user" },
+      { name: "Report configuration", href: "/report-configuration" },
+    ],
+    []
+  );
 
   return (
     <>
@@ -138,7 +148,7 @@ const Sidebar: React.FC = () => {
                 />
                 {/* Change Username after Login */}
                 <span className="text-white text-md font-medium">
-                  {username || "Vui lòng đăng nhập"} 
+                  {username} 
                 </span> 
               </div>
               <button

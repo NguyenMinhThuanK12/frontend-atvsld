@@ -5,4 +5,5 @@ export interface Department {
     province: string;
     district: string;
     ward: string;
+    parent_id: number;
 }

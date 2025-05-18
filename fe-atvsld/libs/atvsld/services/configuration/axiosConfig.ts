@@ -1,4 +1,5 @@
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -10,22 +11,12 @@ const api = axios.create({
 
 console.log("Axios Base URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
 
-api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response) {
-        return Promise.reject({
-          message:
-            error.response.data.message ||
-            "Có lỗi xảy ra từ server. Vui lòng thử lại.",
-          status: error.response.status,
-        });
-      } else if (error.request) {
-        return Promise.reject({ message: "Không thể kết nối đến server." });
-      } else {
-        return Promise.reject({ message: "Đã xảy ra lỗi không xác định." });
-      }
-    }
-);
-  
+api.interceptors.request.use((config) => {
+  const token = Cookies.get("authToken") || sessionStorage.getItem("authToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export default api;

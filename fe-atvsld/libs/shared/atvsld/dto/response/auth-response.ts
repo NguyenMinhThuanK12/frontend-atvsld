@@ -1,3 +1,7 @@
+import { UserAuthenticatedResponse } from './userAuthenticated-response';
+
 export interface AuthenticationResponse {
-  authenticated: boolean;
+  access_token: string;
+  refresh_token: string;
+  userAuthenticated: UserAuthenticatedResponse;
 }

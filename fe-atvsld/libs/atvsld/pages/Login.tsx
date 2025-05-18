@@ -1,46 +1,61 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
+import Cookies from "js-cookie";
 import PrimaryButton from "@/libs/core/components/Button/primaryBtn";
 import PrimaryTextField from "@/libs/core/components/FormFields/primaryTextInput";
 import PrimarySelectField from "@/libs/core/components/FormFields/primarySelectField";
 import PrimaryPasswordField from "@/libs/core/components/FormFields/primaryPasswordField";
 import PrimaryCheckbox from "@/libs/core/components/CheckBox/primaryCheckBox";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
-import Link from "next/link";
-import ForgotPasswordPopup from "@/libs/atvsld/components/ForgotPasswordPopup";
-import {
-  validatePassword,
-  isEmpty,
-} from "@/libs/atvsld/services/validation/globalValidation";
+import { isEmpty } from "@/libs/atvsld/services/validation/globalValidation";
 import { getDepartments } from "../services/api/departmentApi";
 import { login } from "../services/api/authApi";
+const ForgotPasswordPopup = dynamic(
+  () => import("@/libs/atvsld/components/ForgotPasswordPopup"),
+  {
+    ssr: false,
+  }
+);
+
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [agency, setAgency] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+  const [usernameError, setUsernameError] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
   const [agencyOptions, setAgencyOptions] = useState<
     { value: string; label: string }[]
   >([]);
-  const [rememberMe, setRememberMe] = useState(false);
+
   const [alert, setAlert] = useState<{
     content: string;
     type: "success" | "error" | "warning" | "info";
   } | null>(null);
-  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [usernameError, setUsernameError] = useState(false);
-  const [passwordError, setPasswordError] = useState(false);
+
 
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
         const departments = await getDepartments();
+        if (departments.length === 0) {
+          setAlert({
+            content: "Không có đơn vị nào để đăng nhập.",
+            type: "error",
+          });
+          setTimeout(() => setAlert(null), 2000);
+          return;
+        }
+
         const options = departments.map((department) => ({
           value: department.id.toString(),
           label: department.name,
@@ -79,7 +94,8 @@ export default function Login() {
       password: {
         value: password.trim(),
         error: setPasswordError,
-        validate: (value: string) => isEmpty(value) || !validatePassword(value),
+        validate: isEmpty,
+        // validate: (value: string) => isEmpty(value) || !validatePassword(value),
       },
     };
 
@@ -109,40 +125,80 @@ export default function Login() {
     // login
     try {
       const loginRequest = {
-        departmentId: parseInt(agency),
-        username: username,
+        department_id: parseInt(agency),
+        account: username,
         password: password,
       };
 
-      // log the login request
       console.log("Login Request:", loginRequest);
+      
 
       const response = await login(loginRequest); // send login request
 
-      if (response.authenticated) {
+      if (response.status !== 200) {
         setAlert({
-          content: "Đăng nhập thành công!",
-          type: "success",
+          content: response.message,
+          type: "error",
         });
-        setTimeout(() => {
-          router.push(
-            `/dashboard/department?login=success&username=${username}&departmentId=${agency}`
-          );
-          setAlert(null), 2000;
-        });
-      } else {
-        throw new Error("Xác thực thất bại");
+        setTimeout(() => setAlert(null), 2000);
+        return;
       }
 
-    } catch (error: any) {
+      const token = response.data?.access_token;
+      const fullName = response.data?.userAuthenticated.full_name;
+
+      if (!token) {
+        setAlert({
+          content: "Không nhận được token đăng nhập. Vui lòng thử lại.",
+          type: "error",
+        });
+        setTimeout(() => setAlert(null), 2000);
+        return;
+      }
+
+      if (!fullName) {
+        setAlert({
+          content: "Không nhận được tên người dùng. Vui lòng thử lại.",
+          type: "error",
+        });
+        setTimeout(() => setAlert(null), 2000);
+        return;
+      }
+
+      if (rememberMe) {
+        Cookies.set("authToken", token, {
+          expires: 30,
+          secure: true,
+          sameSite: "Strict",
+        });
+        Cookies.set("username", username, {});
+        Cookies.set("agency", agency, {});
+      } else {
+        // session storage is cleared when the tab is closed
+        sessionStorage.setItem("authToken", token);
+        sessionStorage.setItem("fullName", fullName);
+        sessionStorage.setItem("agency", agency);
+      }
+      router.push(
+        `/dashboard/department?login=success`
+      );
+    } catch (error) {
       setAlert({
-        content: error.message || "Đăng nhập thất bại. Vui lòng thử lại.",
+        content: "Đăng nhập thất bại. Vui lòng thử lại.",
         type: "error",
       });
       setTimeout(() => setAlert(null), 2000);
     }
-
   };
+
+  // remember me - auto login when cookies are not expired
+  useEffect(() => {
+    const token =
+      Cookies.get("authToken") || sessionStorage.getItem("authToken");
+    if (token) {
+      router.push("/dashboard/department");
+    }
+  }, [router]);
 
   const closeAlert = () => {
     setAlert(null);
