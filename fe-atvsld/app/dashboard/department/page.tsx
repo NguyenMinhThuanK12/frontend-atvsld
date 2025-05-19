@@ -1,9 +1,11 @@
-import React from 'react'
+import Sidebar from "@/libs/atvsld/components/Sidebar";
+import DepartmentPage from "@/libs/atvsld/pages/DepartmentPage";
 
-export default function page() {
+export default function Page() {
   return (
-    <div className="flex items-center justify-center min-h-screen p-24 text-xl text-gray-700">
-      Department Management
+    <div className="flex flex-col items-center min-h-screen p-24 text-xl text-gray-700">
+      <Sidebar />
+      <DepartmentPage />
     </div>
   );
 }

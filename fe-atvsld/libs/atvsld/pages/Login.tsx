@@ -12,7 +12,7 @@ import PrimaryPasswordField from "@/libs/core/components/FormFields/primaryPassw
 import PrimaryCheckbox from "@/libs/core/components/CheckBox/primaryCheckBox";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 import { isEmpty } from "@/libs/atvsld/services/validation/globalValidation";
-import { getDepartments } from "../services/api/departmentApi";
+import { getDepartmentsForSignIn } from "../services/api/departmentApi";
 import { login } from "../services/api/authApi";
 const ForgotPasswordPopup = dynamic(
   () => import("@/libs/atvsld/components/ForgotPasswordPopup"),
@@ -57,7 +57,7 @@ export default function Login() {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const departments = await getDepartments();
+        const departments = await getDepartmentsForSignIn();
         if (departments.length === 0) {
           showAlert("Không có đơn vị nào được tìm thấy.", "error");
           return;

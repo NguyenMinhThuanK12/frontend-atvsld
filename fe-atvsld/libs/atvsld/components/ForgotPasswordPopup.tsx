@@ -7,6 +7,8 @@ import OutlineButton from "@/libs/core/components/Button/outlineBtn";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 import { validateEmail } from "../services/validation/globalValidation";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { forgotPassword } from "../services/api/authApi";
+import { ForgotPasswordRequest } from "@/libs/shared/atvsld/dto/response/forgotPassword-request";
 
 interface ForgotPasswordPopupProps {
   isOpen: boolean;
@@ -58,7 +60,7 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
     return () => clearInterval(timer);
   }, [countdown]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // call function validateEmail
     if (!validateEmail(email)) {
@@ -66,14 +68,35 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
         "Vui lòng nhập đúng định dạng email, định dạng đúng …..@......",
         "error"
       );
-
       setEmailError(true);
       return;
     }
 
-    showAlert("Gửi email thành công", "success");
-    setIsButtonDisabled(true);
-    setCountdown(60);
+    // call api send email
+    try {
+      const ForgotPasswordRequest: ForgotPasswordRequest = {
+        email: email,
+      };
+      const response = await forgotPassword(ForgotPasswordRequest);
+
+      if (response.status !== 200) {
+        showAlert(response.message, "error");
+        setEmailError(true);
+        return;
+      }
+      showAlert("Gửi email thành công", "success");
+      setEmailError(false);
+      handleClose();
+
+    } catch (error) {
+      showAlert("Có lỗi xảy ra trong quá trình gửi email", "error");
+      setEmailError(true);
+      return;
+    } finally {
+      setIsButtonDisabled(true);
+      setCountdown(60);
+    }
+
   };
 
   const closeAlert = () => {
@@ -97,6 +120,7 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
   const handleClose = () => {
     setStep("select-method");
     setEmail("");
+    setEmailError(false);
     setAlert(null);
     onClose();
   };

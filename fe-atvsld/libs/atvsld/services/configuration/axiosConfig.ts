@@ -1,6 +1,7 @@
 // services/api/axiosConfig.ts
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
+import { refreshToken } from "@/libs/atvsld/services/api/authApi";
 
 // Extend InternalAxiosRequestConfig to include _retry
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -35,28 +36,30 @@ api.interceptors.response.use(
       !originalRequest._retry
     ) {
       originalRequest._retry = true;
+      console.log("Access token expired, attempting to refresh...");
       try {
-        const response = await api.post(
-          "/auth/refresh-token",
-          {},
-          {
-            withCredentials: true, // Gửi Cookie HttpOnly (refreshToken)
-          }
-        );
-
-        console.log("Refresh success:", response.data);
+        const currRefreshToken = Cookies.get("refreshToken");
+        if (!currRefreshToken) {
+          throw new Error("No refresh token available");
+        }
+        console.log("Sending refresh token:", currRefreshToken);
         
-        const { access_token } = response.data.data;
-        Cookies.set("accessToken", access_token, {
+        const response = await refreshToken(currRefreshToken);
+
+        if (response.status !== 200 || !response.data) {
+          throw new Error("Failed to refresh token");
+        }
+
+        const newAccessToken  = response.data.access_token;
+        console.log("New access token received:", newAccessToken);
+        Cookies.set("accessToken", newAccessToken, {
           secure: true,
           sameSite: "Strict",
         });
-        originalRequest.headers.Authorization = `Bearer ${access_token}`;
-
-
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        console.log("Retrying original request with new token...");
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh token thất bại, đăng xuất
         Cookies.remove("accessToken");
         Cookies.remove("refreshToken");
         Cookies.remove("fullName");
