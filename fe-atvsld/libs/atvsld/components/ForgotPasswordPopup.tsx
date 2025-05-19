@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import PrimaryTextField from "@/libs/core/components/FormFields/primaryTextInput";
 import PrimaryButton from "@/libs/core/components/Button/primaryBtn";
 import OutlineButton from "@/libs/core/components/Button/outlineBtn";
@@ -26,27 +26,54 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
     content: string;
     type: "success" | "error" | "warning" | "info";
   } | null>(null);
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+
+  const showAlert = useCallback(
+    (
+      content: string,
+      type: "success" | "error" | "warning" | "info",
+      duration = 2000
+    ) => {
+      setAlert({ content, type });
+      setTimeout(() => setAlert(null), duration);
+    },
+    []
+  );
+
+  // Countdown logic
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            setIsButtonDisabled(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [countdown]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // call function validateEmail
     if (!validateEmail(email)) {
-      setAlert({
-        content:
-          "Vui lòng nhập đúng định dạng email, định dạng đúng …..@......",
-        type: "error",
-      });
-      setTimeout(() => setAlert(null), 2000);
+      showAlert(
+        "Vui lòng nhập đúng định dạng email, định dạng đúng …..@......",
+        "error"
+      );
+
       setEmailError(true);
       return;
     }
 
-    setAlert({ content: "Gửi email thành công", type: "success" });
-    
-    setTimeout(() => {
-      setAlert(null);
-      handleClose();
-    }, 2000);
+    showAlert("Gửi email thành công", "success");
+    setIsButtonDisabled(true);
+    setCountdown(60);
   };
 
   const closeAlert = () => {
@@ -64,8 +91,7 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
   };
 
   const handleSendZalo = () => {
-    setAlert({ content: "Chưa hỗ trợ phương thức này", type: "info" });
-    setTimeout(() => setAlert(null), 2000);
+    showAlert("Chưa hỗ trợ phương thức này", "info" );
   };
 
   const handleClose = () => {
@@ -133,11 +159,19 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Nhập email của bạn"
-                  required
-                  error={emailError}
+                required
+                error={emailError}
               />
               <div className="max-w-[80%] mx-auto">
-                <PrimaryButton content="Gửi yêu cầu" type="submit" />
+                <PrimaryButton
+                  content={
+                    isButtonDisabled
+                      ? `Gửi lại sau ${countdown}s`
+                      : "Gửi yêu cầu"
+                  }
+                  type="submit"
+                  disabled={isButtonDisabled}
+                />
               </div>
               <div className="flex items-center justify-center mt-4 space-x-1">
                 <span className="text-sm text-gray-600">

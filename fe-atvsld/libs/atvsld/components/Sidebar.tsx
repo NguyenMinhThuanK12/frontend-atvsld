@@ -7,12 +7,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Cookies from "js-cookie";
 import SidebarItem from "./SidebarItem";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
+import { useErrorBoundary } from "react-error-boundary";
+import { logout } from "@/libs/atvsld/services/api/authApi";
+import { log } from "console";
 
-interface MenuItem {
-  name: string;
-  href: string;
-  icon?: React.ReactNode;
-}
 
 const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -42,11 +40,16 @@ const Sidebar: React.FC = () => {
     const signInStatus = searchParams.get("login");
 
     if (signInStatus === "success") {
-      setUsername(Cookies.get("fullname ") || "");
-
       return showAlert("Đăng nhập thành công!", "success");
     }
-  }, [searchParams, username, showAlert]);
+  }, [searchParams, showAlert]);
+
+  useEffect(() => {
+    const storedFullName = Cookies.get("fullName");
+    if (storedFullName) {
+      setUsername(storedFullName || "Không xác định");
+    }
+  }, [username])
 
   const toggleSidebar = useCallback(() => {
     setIsOpen((prev) => !prev);
@@ -56,14 +59,33 @@ const Sidebar: React.FC = () => {
     setIsSystemOpen((prev) => !prev);
   }, []);
 
-  const handleLogout = useCallback(() => {
-    const allCookies = Cookies.get();
-    Object.keys(allCookies).forEach((cookieName) => {
-      Cookies.remove(cookieName, { path: "/" }); // Remove each cookie, specify path if needed
-    });
-    sessionStorage.clear();
+  const handleLogout = useCallback(async () => {
+    const refreshToken = Cookies.get("refreshToken");
+
+    if (!refreshToken) {
+      showAlert("Không tìm thấy refresh token. Đăng xuất ngay lập tức.", "error");
+      // Vẫn xóa dữ liệu và đăng xuất
+    } else {
+      try {
+        const response = await logout(refreshToken);
+        if (response.status !== 200) {
+          showAlert(response.message || "Đăng xuất thất bại", "error");
+          // Vẫn xóa dữ liệu để đảm bảo đăng xuất
+        }
+      } catch (error) {
+        showAlert("Lỗi khi đăng xuất. Vẫn tiến hành xóa dữ liệu.", "warning");
+      }
+    }
+
+    // Xóa các Cookies cụ thể
+    ["accessToken", "refreshToken", "fullName", "departmentId"].forEach(
+      (cookieName) => {
+        Cookies.remove(cookieName, { path: "/" });
+      }
+    );
+
     router.push("/auth/login?logout=success");
-  }, [router]);
+  }, [router, showAlert]);
 
   const menuItems = useMemo(
     () => [

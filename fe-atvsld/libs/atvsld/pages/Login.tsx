@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -20,7 +20,6 @@ const ForgotPasswordPopup = dynamic(
     ssr: false,
   }
 );
-
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -42,17 +41,25 @@ export default function Login() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const showAlert = useCallback(
+    (
+      content: string,
+      type: "success" | "error" | "warning" | "info",
+      duration = 2000
+    ) => {
+      setAlert({ content, type });
+      const timer = setTimeout(() => setAlert(null), duration);
+    },
+    []
+  );
 
+  // get departments list
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
         const departments = await getDepartments();
         if (departments.length === 0) {
-          setAlert({
-            content: "Không có đơn vị nào để đăng nhập.",
-            type: "error",
-          });
-          setTimeout(() => setAlert(null), 2000);
+          showAlert("Không có đơn vị nào được tìm thấy.", "error");
           return;
         }
 
@@ -61,19 +68,18 @@ export default function Login() {
           label: department.name,
         }));
         setAgencyOptions(options);
+
         if (options.length > 0) setAgency(options[0].value);
       } catch (error: any) {
         console.error("Error fetching departments:", error.message);
-        setAlert({
-          content: "Không thể tải danh sách đơn vị. Vui lòng thử lại.",
-          type: "error",
-        });
-        setTimeout(() => setAlert(null), 2000);
+        showAlert("Có lỗi xảy ra khi tải danh sách đơn vị.", "error");
       }
     };
 
     fetchDepartments();
+  }, []);
 
+  useEffect(() => {
     const logoutStatus = searchParams.get("logout");
     if (logoutStatus === "success") {
       setAlert({
@@ -83,8 +89,10 @@ export default function Login() {
     }
   }, [searchParams]);
 
+  // handle login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const fields = {
       username: {
         value: username.trim(),
@@ -111,18 +119,13 @@ export default function Login() {
 
     // display alert
     if (hasErrors) {
-      setAlert({
-        content:
-          isEmpty(username) || isEmpty(password)
-            ? "Vui lòng nhập đầy đủ thông tin"
-            : "Mật khẩu không đúng định dạng",
-        type: "error",
-      });
-      setTimeout(() => setAlert(null), 2000);
+      showAlert(isEmpty(username) || isEmpty(password)
+        ? "Vui lòng nhập đầy đủ thông tin."
+        : "Mật khẩu không đúng định dạng", "error")
       return;
     }
 
-    // login
+    // login if no errors
     try {
       const loginRequest = {
         department_id: parseInt(agency),
@@ -130,79 +133,57 @@ export default function Login() {
         password: password,
       };
 
-      console.log("Login Request:", loginRequest);
-      
-
       const response = await login(loginRequest); // send login request
 
-      if (response.status !== 200) {
-        setAlert({
-          content: response.message,
-          type: "error",
-        });
-        setTimeout(() => setAlert(null), 2000);
+      if (response.status !== 200 || !response.data) {
+        showAlert(response.message, "error");
         return;
       }
 
-      const token = response.data?.access_token;
-      const fullName = response.data?.userAuthenticated.full_name;
+      const access_token = response.data.access_token;
+      const refresh_token = response.data.refresh_token;
+      const userAuthenticated = response.data.userAuthenticated;
+      const fullName = userAuthenticated.full_name;
+      const departmentId = userAuthenticated.department_id.toString();
 
-      if (!token) {
-        setAlert({
-          content: "Không nhận được token đăng nhập. Vui lòng thử lại.",
-          type: "error",
-        });
-        setTimeout(() => setAlert(null), 2000);
-        return;
-      }
-
-      if (!fullName) {
-        setAlert({
-          content: "Không nhận được tên người dùng. Vui lòng thử lại.",
-          type: "error",
-        });
-        setTimeout(() => setAlert(null), 2000);
-        return;
-      }
-
-      if (rememberMe) {
-        Cookies.set("authToken", token, {
-          expires: 30,
-          secure: true,
-          sameSite: "Strict",
-        });
-        Cookies.set("username", username, {});
-        Cookies.set("agency", agency, {});
-      } else {
-        // session storage is cleared when the tab is closed
-        sessionStorage.setItem("authToken", token);
-        sessionStorage.setItem("fullName", fullName);
-        sessionStorage.setItem("agency", agency);
-      }
-      router.push(
-        `/dashboard/department?login=success`
-      );
-    } catch (error) {
-      setAlert({
-        content: "Đăng nhập thất bại. Vui lòng thử lại.",
-        type: "error",
+      Cookies.set("accessToken", access_token, {
+        expires: rememberMe ? 7 : undefined, 
+        secure: true,
+        sameSite: "Strict",
       });
-      setTimeout(() => setAlert(null), 2000);
+      Cookies.set("refreshToken", refresh_token, {
+        expires: rememberMe ? 7 : undefined,
+        secure: true,
+        sameSite: "Strict",
+        // httpOnly: true,
+      });
+      Cookies.set("fullName", fullName, {
+        expires: rememberMe ? 7 : undefined,
+        secure: true,
+        sameSite: "Strict",
+      });
+      Cookies.set("departmentId", departmentId, {
+        expires: rememberMe ? 7 : undefined,
+        secure: true,
+        sameSite: "Strict",
+      });
+
+
+      const redirect = searchParams.get("redirect") || "/dashboard/department";
+      router.push(redirect + "?login=success");
+    } catch (error) {
+      showAlert("Có lỗi xảy ra trong quá trình đăng nhập.", "error");
     }
   };
 
   // remember me - auto login when cookies are not expired
   useEffect(() => {
-    const token =
-      Cookies.get("authToken") || sessionStorage.getItem("authToken");
+    const token = Cookies.get("accessToken");
     if (token) {
-      router.push("/dashboard/department");
+      const redirect = searchParams.get("redirect") || "/dashboard/department";
+      router.push(redirect);
     }
   }, [router]);
-
-  const closeAlert = () => {
-    setAlert(null);
-  };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
@@ -223,7 +204,7 @@ export default function Login() {
 
       {/* Alert */}
       {alert && (
-        <Alert content={alert.content} type={alert.type} onClose={closeAlert} />
+        <Alert content={alert.content} type={alert.type} onClose={() => setAlert(null)} />
       )}
 
       {/* Right Side - Login Form */}
