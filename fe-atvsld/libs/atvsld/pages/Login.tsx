@@ -82,10 +82,9 @@ export default function Login() {
   useEffect(() => {
     const logoutStatus = searchParams.get("logout");
     if (logoutStatus === "success") {
-      setAlert({
-        content: "Đăng xuất thành công!",
-        type: "success",
-      });
+      showAlert("Đăng xuất thành công.", "success")
+    } else if (logoutStatus === "forced") {
+      showAlert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", "error");
     }
   }, [searchParams]);
 

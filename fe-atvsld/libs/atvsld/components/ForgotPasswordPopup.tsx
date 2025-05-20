@@ -85,18 +85,15 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
         return;
       }
       showAlert("Gửi email thành công", "success");
+      setIsButtonDisabled(true);
+      setCountdown(60);
       setEmailError(false);
-      handleClose();
 
     } catch (error) {
       showAlert("Có lỗi xảy ra trong quá trình gửi email", "error");
       setEmailError(true);
       return;
-    } finally {
-      setIsButtonDisabled(true);
-      setCountdown(60);
-    }
-
+    } 
   };
 
   const closeAlert = () => {

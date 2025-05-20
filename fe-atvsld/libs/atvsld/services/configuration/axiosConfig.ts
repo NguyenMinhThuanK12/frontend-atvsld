@@ -3,7 +3,6 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
 import { refreshToken } from "@/libs/atvsld/services/api/authApi";
 
-// Extend InternalAxiosRequestConfig to include _retry
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
