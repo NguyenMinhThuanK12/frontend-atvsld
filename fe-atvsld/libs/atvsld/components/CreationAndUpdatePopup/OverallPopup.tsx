@@ -161,7 +161,6 @@ export default function OverallPopup({
         );
       }
 
-      // Prepare formData with establishedDate as Date or null
       const formattedFormData: Department = {
         ...formData,
         establishedDate: formData.establishedDate

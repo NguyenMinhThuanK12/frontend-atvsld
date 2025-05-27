@@ -30,7 +30,7 @@ export default function SelectedItemForDeleting<T>({
   return (
     <div
       className="container w-86 h-10 mx-auto flex items-center justify-between bg-white shadow-lg rounded-md
-    transition-all duration-300 ease-in-out opacity-100 translate-y-0 animate-fade-in"
+    transition-all duration-300 ease-in-out opacity-100 translate-y-0 animate-fade-in mb-4"
     >
       <div className="w-10 h-full bg-primary rounded-md flex items-center justify-center">
         <h5 className="text-white font-bold text-sm">{selectedRowsQuantity}</h5>
@@ -44,19 +44,21 @@ export default function SelectedItemForDeleting<T>({
           color="red"
           icon={<Trash2 className="text-white" />}
           sx={{ minWidth: "50px", fontSize: "14px" }}
-          onClick={handleDeleteClick}
+          // onClick={handleDeleteClick}
+          onClick={() => { onDelete([]) }}
         />
         <div className="flex items-center justify-center w-6 h-6 cursor-pointer">
-          <X className="text-gray-500" />
+          <X className="text-gray-500"/>
+
         </div>
       </div>
 
-      <ConfirmationDialog
+      {/* <ConfirmationDialog
         title="Xác nhận xóa các dữ liệu đã chọn?"
         isOpen={isConfirmDialogOpen}
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
-      />
+      /> */}
     </div>
   );
 }

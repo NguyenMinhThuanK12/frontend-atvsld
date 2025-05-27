@@ -51,7 +51,7 @@ export default function CustomizedDataGrid<
   onDelete,
   onFilterChange,
   filters = {},
-  pageSizeOptions = [1, 2, 3, 4, 5],
+  pageSizeOptions = [5, 10, 15, 20],
   initialPageSize = 5,
 }: CustomDataGridProps<T>) {
   const [selectedRows, setSelectedRows] = useState<T[]>([]);

@@ -20,7 +20,7 @@ export const getDepartments = async (): Promise<paginationResponse<Department>> 
     console.log("Fetching departments...");
     
     const response = await api.get<ApiResponse<paginationResponse<Department>>>("/departments");
-    console.log("API Response:", response.data); 
+    console.log("API Response:", response.data.data); 
     if (!response.data.data) {
       throw new Error("No data found in the response");
     }
