@@ -1,5 +1,4 @@
 import Sidebar from "@/libs/atvsld/components/Sidebar";
-import { ErrorBoundary } from "react-error-boundary";
 import Cookies from "js-cookie";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -8,13 +7,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
     return (
       <html lang="en">
-        <body className={`antialiased`}>
-          <ErrorBoundary
-            fallback={<div>Lỗi hiển thị sidebar, vui lòng thử lại.</div>}
-          >
-            <Sidebar />
-          </ErrorBoundary>
-          ;{children}
+        <body className="">
+          <Sidebar />
+          <main className="pl-80 bg-[url('/img/background.jpg')] bg-cover bg-no-repeat bg-center h-screen">
+            {children}
+          </main>
         </body>
       </html>
     );

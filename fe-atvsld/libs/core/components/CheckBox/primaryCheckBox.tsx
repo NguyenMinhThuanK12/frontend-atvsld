@@ -7,7 +7,7 @@ interface PrimaryCheckboxProps {
   name: string;
   checked: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  label: string;
+  label?: string;
 }
 
 const PrimaryCheckbox: React.FC<PrimaryCheckboxProps> = ({
@@ -15,7 +15,7 @@ const PrimaryCheckbox: React.FC<PrimaryCheckboxProps> = ({
   name,
   checked,
   onChange,
-  label,
+  label = "",
 }) => {
   return (
     <div className="flex items-center">
@@ -27,9 +27,13 @@ const PrimaryCheckbox: React.FC<PrimaryCheckboxProps> = ({
               onChange={onChange}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer hover:bg-white/10"
       />
-      <label htmlFor={id} className="ml-2 block text-md text-gray-700">
-        {label}
-      </label>
+
+      {label !== "" && (
+        <label htmlFor={id} className="ml-2 block text-md text-gray-700">
+          {label}
+        </label>
+      )}
+      
     </div>
   );
 };

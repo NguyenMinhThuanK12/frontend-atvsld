@@ -15,61 +15,61 @@ const api = axios.create({
   timeout: 10000,
 });
 
-api.interceptors.request.use((config: CustomAxiosRequestConfig) => {
-  const token = Cookies.get("accessToken");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// api.interceptors.request.use((config: CustomAxiosRequestConfig) => {
+//   const token = Cookies.get("accessToken");
+//   if (token) {
+//     config.headers.Authorization = `Bearer ${token}`;
+//   }
+//   return config;
+// });
 
-api.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as
-      | CustomAxiosRequestConfig
-      | undefined;
-    if (
-      error.response?.status === 401 &&
-      originalRequest &&
-      !originalRequest._retry
-    ) {
-      originalRequest._retry = true;
-      console.log("Access token expired, attempting to refresh...");
-      try {
-        const currRefreshToken = Cookies.get("refreshToken");
-        if (!currRefreshToken) {
-          throw new Error("No refresh token available");
-        }
-        console.log("Sending refresh token:", currRefreshToken);
+// api.interceptors.response.use(
+//   (response) => response,
+//   async (error: AxiosError) => {
+//     const originalRequest = error.config as
+//       | CustomAxiosRequestConfig
+//       | undefined;
+//     if (
+//       error.response?.status === 401 &&
+//       originalRequest &&
+//       !originalRequest._retry
+//     ) {
+//       originalRequest._retry = true;
+//       console.log("Access token expired, attempting to refresh...");
+//       try {
+//         const currRefreshToken = Cookies.get("refreshToken");
+//         if (!currRefreshToken) {
+//           throw new Error("No refresh token available");
+//         }
+//         console.log("Sending refresh token:", currRefreshToken);
         
-        const response = await refreshToken(currRefreshToken);
+//         const response = await refreshToken(currRefreshToken);
 
-        if (response.status !== 200 || !response.data) {
-          throw new Error("Failed to refresh token");
-        }
+//         if (response.status !== 200 || !response.data) {
+//           throw new Error("Failed to refresh token");
+//         }
 
-        const newAccessToken  = response.data.access_token;
-        console.log("New access token received:", newAccessToken);
-        Cookies.set("accessToken", newAccessToken, {
-          secure: true,
-          sameSite: "Strict",
-        });
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        console.log("Retrying original request with new token...");
-        return api(originalRequest);
-      } catch (refreshError) {
-        Cookies.remove("accessToken");
-        Cookies.remove("refreshToken");
-        Cookies.remove("fullName");
-        Cookies.remove("departmentId");
-        window.location.href = "/auth/login?logout=forced";
-        return Promise.reject(refreshError);
-      }
-    }
-    return Promise.reject(error);
-  }
-);
+//         const newAccessToken  = response.data.access_token;
+//         console.log("New access token received:", newAccessToken);
+//         Cookies.set("accessToken", newAccessToken, {
+//           secure: true,
+//           sameSite: "Strict",
+//         });
+//         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+//         console.log("Retrying original request with new token...");
+//         return api(originalRequest);
+//       } catch (refreshError) {
+//         Cookies.remove("accessToken");
+//         Cookies.remove("refreshToken");
+//         Cookies.remove("fullName");
+//         Cookies.remove("departmentId");
+//         window.location.href = "/auth/login?logout=forced";
+//         return Promise.reject(refreshError);
+//       }
+//     }
+//     return Promise.reject(error);
+//   }
+// );
 
 export default api;
 

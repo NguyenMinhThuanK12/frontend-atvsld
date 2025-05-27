@@ -12,7 +12,6 @@ import PrimaryPasswordField from "@/libs/core/components/FormFields/primaryPassw
 import PrimaryCheckbox from "@/libs/core/components/CheckBox/primaryCheckBox";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 import { isEmpty } from "@/libs/atvsld/services/validation/globalValidation";
-import { getDepartmentsForSignIn } from "../services/api/departmentApi";
 import { login } from "../services/api/authApi";
 const ForgotPasswordPopup = dynamic(
   () => import("@/libs/atvsld/components/ForgotPasswordPopup"),
@@ -48,36 +47,36 @@ export default function Login() {
       duration = 2000
     ) => {
       setAlert({ content, type });
-      const timer = setTimeout(() => setAlert(null), duration);
+      setTimeout(() => setAlert(null), duration);
     },
     []
   );
 
   // get departments list
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        const departments = await getDepartmentsForSignIn();
-        if (departments.length === 0) {
-          showAlert("Không có đơn vị nào được tìm thấy.", "error");
-          return;
-        }
+  // useEffect(() => {
+  //   const fetchDepartments = async () => {
+  //     try {
+  //       const departments = await getDepartmentsForSignIn();
+  //       if (departments.length === 0) {
+  //         showAlert("Không có đơn vị nào được tìm thấy.", "error");
+  //         return;
+  //       }
 
-        const options = departments.map((department) => ({
-          value: department.id.toString(),
-          label: department.name,
-        }));
-        setAgencyOptions(options);
+  //       const options = departments.map((department) => ({
+  //         value: department.id.toString(),
+  //         label: department.name,
+  //       }));
+  //       setAgencyOptions(options);
 
-        if (options.length > 0) setAgency(options[0].value);
-      } catch (error: any) {
-        console.error("Error fetching departments:", error.message);
-        showAlert("Có lỗi xảy ra khi tải danh sách đơn vị.", "error");
-      }
-    };
+  //       if (options.length > 0) setAgency(options[0].value);
+  //     } catch (error: any) {
+  //       console.error("Error fetching departments:", error.message);
+  //       showAlert("Có lỗi xảy ra khi tải danh sách đơn vị.", "error");
+  //     }
+  //   };
 
-    fetchDepartments();
-  }, []);
+  //   fetchDepartments();
+  // }, []);
 
   useEffect(() => {
     const logoutStatus = searchParams.get("logout");
@@ -230,13 +229,13 @@ export default function Login() {
 
           {/* Login Form */}
           <form onSubmit={handleLogin} className="space-y-6">
-            <PrimarySelectField
+            {/* <PrimarySelectField
               label="Đơn vị"
               value={agency}
               onChange={(e) => setAgency(e.target.value)}
               options={agencyOptions}
               required
-            />
+            /> */}
 
             <PrimaryTextField
               label="Tên tài khoản *"
