@@ -11,13 +11,11 @@ import {
   getDepartments,
 } from "../services/api/departmentApi";
 import { Department } from "@/libs/shared/atvsld/models/department.model";
-import ReviewSubmit from "../components/CreationAndUpdatePopup/ReviewSubmit";
-import { X } from "lucide-react";
-import OverallPopup from "../components/CreationAndUpdatePopup/OverallPopup";
 import { district } from "@/libs/core/models/district";
 import { Ward } from "@/libs/core/models/ward";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 import Header from "../components/Header";
+import { useRouter } from "next/navigation";
 
 interface DepartmentRow {
   id: string;
@@ -197,8 +195,22 @@ export default function DepartmentPage() {
     }
   };
 
-  // handle view department
+  const router = useRouter();
+
   const handleViewDepartmentDetail = (row: DepartmentRow) => {
+    router.push(`/dashboard/businesses/${row.id}`);
+  };
+
+  const handleDisplayEditableDepartment = (row: DepartmentRow) => {
+    router.push(`/dashboard/businesses/${row.id}?mode=update`);
+  };
+
+  const handleCreateDepartment = () => {
+    router.push(`dashboard/businesses/new?mode=create`);
+  };
+
+  // // handle view department
+  const handleViewDepartmentDetailOld = (row: DepartmentRow) => {
     const currId = row.id;
     const selectedDepartment = departments.find(
       (department) => String(department.id) === currId
@@ -210,18 +222,18 @@ export default function DepartmentPage() {
     }
   };
 
-  const handleDisplayEditableDepartment = (row: DepartmentRow) => {
-    const currId = row.id;
-    const selectedDepartment = departments.find(
-      (department) => String(department.id) === currId
-    );
-    if (selectedDepartment) {
-      setEditedDepartment(selectedDepartment);
-      console.log("Selected department for editing:", selectedDepartment);
-    } else {
-      showAlert("Không thể xem thông tin đơn vị.", "error");
-    }
-  };
+  // const handleDisplayEditableDepartment = (row: DepartmentRow) => {
+  //   const currId = row.id;
+  //   const selectedDepartment = departments.find(
+  //     (department) => String(department.id) === currId
+  //   );
+  //   if (selectedDepartment) {
+  //     setEditedDepartment(selectedDepartment);
+  //     console.log("Selected department for editing:", selectedDepartment);
+  //   } else {
+  //     showAlert("Không thể xem thông tin đơn vị.", "error");
+  //   }
+  // };
 
   // handle delete selected department
   const handleDeleteDepartment = async () => {
@@ -251,7 +263,7 @@ export default function DepartmentPage() {
   return (
     <div className="container w-full flex flex-col items-center justify-between h-full">
       <Header
-        onAddNewClick={() => setCreationDepartment(true)}
+        onAddNewClick={handleCreateDepartment}
         onUploadClick={() => {}}
         onExportClick={() => {}}
       />
@@ -267,8 +279,9 @@ export default function DepartmentPage() {
         onFilterChange={handleFilterChange}
         filters={filters}
       />
+
       {/* view a department */}
-      {viewedDepartment && (
+      {/* {viewedDepartment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="w-[85vw] max-h-[90vh] relative overflow-hidden bg-white rounded-lg shadow-md py-4 px-8 flex flex-col items-center justify-between z-50">
             <div className="flex items-center justify-center rounded-full hover:bg-gray-100 cursor-pointer absolute top-2 right-2">
@@ -284,10 +297,10 @@ export default function DepartmentPage() {
             />
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Edit row department */}
-      {editedDepartment && (
+      {/* {editedDepartment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <OverallPopup
             onClose={() => setEditedDepartment(null)}
@@ -296,10 +309,10 @@ export default function DepartmentPage() {
             onRefresh={fetchDepartments}
           />
         </div>
-      )}
+      )} */}
 
       {/* Create new department */}
-      {creationDepartment && (
+      {/* {creationDepartment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <OverallPopup
             onClose={() => setCreationDepartment(false)}
@@ -308,7 +321,7 @@ export default function DepartmentPage() {
             onRefresh={fetchDepartments}
           />
         </div>
-      )}
+      )} */}
 
       {/* Alert */}
       {alert && (

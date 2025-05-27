@@ -1,18 +1,20 @@
-"use client";
-
-import { Typography } from "@mui/material";
-import LicenseTable from "./LicenseTable";
-import { Department } from "@/libs/shared/atvsld/models/department.model";
-import { useEffect } from "react";
+import { CreationBusinessRequest } from '@/libs/shared/atvsld/dto/request/creationBussinessRequest'
+import { UpdateBusinessRequest } from '@/libs/shared/atvsld/dto/request/updateBusinessRequest'
+import { Business } from '@/libs/shared/atvsld/models/business.model'
+import { Typography } from '@mui/material';
+import React, { useEffect } from 'react'
+import LicenseTable from './LicenseTable';
 
 interface ReviewSubmitProps {
-  formData: Department | null;
-  setFormData: React.Dispatch<React.SetStateAction<Department | null>>;
+    onComeBack?: () => void;
+    formData: Business | null;
 }
 
-export default function ReviewSubmit({ formData }: ReviewSubmitProps) {
-  
-  
+export default function ReviewSubmit({ onComeBack, formData }: ReviewSubmitProps) {
+  // debug
+  useEffect(() => {
+    console.log("ReviewSubmit formData:", formData);
+  });
 
   return (
     <div className="flex flex-col gap-4 w-full overflow-auto shadow-lg p-4 rounded-lg bg-white">

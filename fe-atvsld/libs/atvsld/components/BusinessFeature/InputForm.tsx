@@ -1,35 +1,45 @@
-"use client";
-
-import { Controller, useForm } from "react-hook-form";
+import { CreationBusinessRequest } from "@/libs/shared/atvsld/dto/request/creationBussinessRequest";
+import { UpdateBusinessRequest } from "@/libs/shared/atvsld/dto/request/updateBusinessRequest";
+import { Business } from "@/libs/shared/atvsld/models/business.model";
+import { BusinessType } from "@/libs/shared/core/enums/businessType";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  TextField,
-  Select,
-  MenuItem,
-  InputLabel,
+  Controller,
+  FieldErrors,
+  useForm,
+  UseFormHandleSubmit,
+} from "react-hook-form";
+import wardsData from "@/public/json/wards.json";
+import {
+  cityOptions,
+  districtOptions,
+  getWardOptions,
+} from "../../utils/fetchProvinceJson";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { vi } from "date-fns/locale";
+import {
   FormControl,
   FormHelperText,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { vi } from "date-fns/locale";
 import LicenseTable from "./LicenseTable";
-import { Department } from "@/libs/shared/atvsld/models/department.model";
-import provincesData from "@/public/json/provinces.json";
-import districtsData from "@/public/json/districts.json";
-import wardsData from "@/public/json/wards.json";
-import { BusinessType } from "@/libs/shared/core/enums/businessType";
-import { province } from "@/libs/core/models/province";
-import { district } from "@/libs/core/models/district";
-import { Ward } from "@/libs/core/models/ward";
-import { parseISO } from "date-fns";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
+import { isValid, parse } from "date-fns";
 
 interface InputFormProps {
-  formData: Department | null;
-  setFormData: React.Dispatch<React.SetStateAction<Department | null>>;
-  mode?: "create" | "edit";
+  formData: Business | null;
+  setFormData: React.Dispatch<React.SetStateAction<Business | null>>;
+  mode: "create" | "update";
+  setTriggerValidation?: (trigger: () => Promise<boolean>) => void;
+  setFormErrors?: React.Dispatch<
+    React.SetStateAction<FieldErrors<Business> | null>
+  >;
+  setHandleSubmit?: (handleSubmit: UseFormHandleSubmit<Business>) => void;
 }
 
 const businessTypeOptions = Object.keys(BusinessType).map((key) => ({
@@ -37,76 +47,55 @@ const businessTypeOptions = Object.keys(BusinessType).map((key) => ({
   value: BusinessType[key as keyof typeof BusinessType],
 }));
 
-const cityOptions = provincesData
-  .filter((province: province) => province.code === "79")
-  .map((province: province) => ({
-    key: province.code,
-    value: province.name_with_type,
-  }));
-
-const districtOptions = districtsData
-  .filter((district: district) => district.parent_code === "79")
-  .map((district: district) => ({
-    key: district.code,
-    value: district.name_with_type,
-  }));
-
-const getWardOptions = (
-  selectedDistrict: string,
-  districtOptions: { key: string; value: string }[],
-  wardsData: Ward[]
-): { key: string; value: string }[] => {
-  const district = districtOptions.find((d) => d.value === selectedDistrict);
-  if (!district) {
-    return [{ key: "", value: "Chọn quận/huyện trước" }];
-  }
-  const wards = wardsData
-    .filter((ward: Ward) => ward.parent_code === district.key)
-    .map((ward: Ward) => ({
-      key: ward.code,
-      value: ward.name_with_type,
-    }));
-  return wards.length > 0 ? wards : [{ key: "", value: "Không có phường/xã" }];
-};
-
 export default function InputForm({
   formData,
   setFormData,
   mode,
+  setHandleSubmit,
+  setFormErrors,
 }: InputFormProps) {
+    let parsedEstablishedDate: Date | null = null;
+    if (formData?.establishedDate) {
+      if (typeof formData.establishedDate === "string") {
+        parsedEstablishedDate = parse(
+          formData.establishedDate,
+          "yyyy-MM-dd",
+          new Date()
+        );
+        if (!isValid(parsedEstablishedDate)) {
+          parsedEstablishedDate = null; // Fallback if parsing fails
+        }
+      } else if (formData.establishedDate instanceof Date) {
+        parsedEstablishedDate = formData.establishedDate;
+      }
+    }
   const {
     control,
-    handleSubmit,
-    formState: { errors },
     watch,
     setValue,
-  } = useForm<Department>({
+    formState: { errors },
+    handleSubmit,
+  } = useForm<Business>({
     defaultValues: {
-      name: "",
-      taxCode: "",
-      businessType: "" as BusinessType,
-      mainBusinessField: "",
-      registrationCity: "",
-      registrationDistrict: "",
-      registrationWard: "",
-      registrationAddress: null,
-      operationCity: null,
-      operationDistrict: null,
-      operationWard: null,
-      operationAddress: null,
-      foreignName: null,
-      email: "",
-      phoneNumber: null,
-      representativeName: null,
-      representativePhone: null,
-      businessLicenseFile: null,
-      otherDocumentFile: null,
-      establishedDate: null,
       ...formData,
+      establishedDate: parsedEstablishedDate,
     },
     mode: "onChange",
   });
 
+  // Pass handleSubmit to parent
+  useEffect(() => {
+    if (setHandleSubmit) {
+      setHandleSubmit(handleSubmit);
+    }
+  }, [setHandleSubmit, handleSubmit]);
+
+  // Pass errors to parent
+  useEffect(() => {
+    setFormErrors?.(errors);
+  }, [errors, setFormErrors]);
+
+  // show alert
   const [alert, setAlert] = useState<{
     content: string;
     type: "success" | "error" | "warning" | "info";
@@ -124,6 +113,15 @@ export default function InputForm({
     []
   );
 
+  // create a label with asterisk
+  const renderLabelWithAsterisk = (label: string, required: boolean) => (
+    <span>
+      {label}
+      {required && <span style={{ color: "red" }}> *</span>}
+    </span>
+  );
+
+  // get data province from json
   const registrationCity = watch("registrationCity");
   const registrationDistrict = watch("registrationDistrict");
   const operationCity = watch("operationCity");
@@ -145,66 +143,32 @@ export default function InputForm({
     [selectedOperationDistrict]
   );
 
+  // handle file upload
   const handleFileUpload = (id: number, file: File | null) => {
-    console.log("File uploaded:", file, "for ID:", id);
-    setFormData((prev) => {
-      const current = prev || {
-        id: 0,
-        name: "",
-        taxCode: "",
-        businessType: "" as BusinessType,
-        mainBusinessField: "",
-        registrationCity: "",
-        registrationDistrict: "",
-        registrationWard: "",
-        registrationAddress: "",
-        operationCity: "",
-        operationDistrict: "",
-        operationWard: "",
-        operationAddress: "",
-        foreignName: "",
-        email: "",
-        phoneNumber: "",
-        representativeName: "",
-        representativePhone: "",
-        isActive: true,
-        businessLicenseFile: null,
-        otherDocumentFile: null,
-        establishedDate: null,
-      };
-      return {
-        ...current,
-        businessLicenseFile: id === 1 ? file : current.businessLicenseFile,
-        otherDocumentFile: id === 2 ? file : current.otherDocumentFile,
-      };
+    console.log("File uploaded:", file, "for ID:", id); // Keep the log
+    setFormData((prevFormData) => {
+      if (!prevFormData) return prevFormData;
+
+      //  new object to avoid mutating the previous state directly
+      const updatedFormData = { ...prevFormData };
+
+      // Update the appropriate field based on id
+      if (id === 1) {
+        updatedFormData.businessLicenseFile = file; // id 1 maps to businessLicenseFile
+      } else if (id === 2) {
+        updatedFormData.otherDocumentFile = file; // id 2 maps to otherDocumentFile
+      }
+
+      return updatedFormData;
     });
-    showAlert("Tải lên thành công", "success");
-  };
-
-  useEffect(() => {
-    console.log("formData in InputForm after update:", formData);
-  }, [formData]);
-
-  const renderLabelWithAsterisk = (label: string, required: boolean) => (
-    <span>
-      {label}
-      {required && <span style={{ color: "red" }}> *</span>}
-    </span>
-  );
-
-  const onSubmit = (data: Department) => {
-    setFormData(data);
-  };
+    };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-6 w-full overflow-auto py-4"
-      >
+      <form className="flex flex-col gap-6 w-full overflow-auto py-4">
         <div className="border rounded-lg p-4 shadow-xl">
           <h2 className="text-lg font-semibold mb-4">
-            {mode === "edit"
+            {mode === "update"
               ? "Cập nhật thông tin doanh nghiệp"
               : "Thông tin doanh nghiệp"}
           </h2>
@@ -212,6 +176,7 @@ export default function InputForm({
             <Controller
               name="name"
               control={control}
+              rules={{ required: "Tên doanh nghiệp là bắt buộc" }}
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -219,6 +184,8 @@ export default function InputForm({
                   variant="outlined"
                   fullWidth
                   value={field.value || ""}
+                  error={!!errors.name}
+                  helperText={errors.name?.message}
                   aria-required="true"
                 />
               )}
@@ -226,6 +193,7 @@ export default function InputForm({
             <Controller
               name="taxCode"
               control={control}
+              rules={{ required: "Mã số thuế là bắt buộc" }}
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -242,12 +210,18 @@ export default function InputForm({
             <Controller
               name="businessType"
               control={control}
+              rules={{ required: "Loại hình kinh doanh là bắt buộc" }}
               render={({ field }) => (
                 <FormControl fullWidth error={!!errors.businessType}>
                   <InputLabel>
                     {renderLabelWithAsterisk("Loại hình kinh doanh", true)}
                   </InputLabel>
-                  <Select {...field} label="Loại hình kinh doanh">
+                  <Select
+                    {...field}
+                    label="Loại hình kinh doanh"
+                    value={field.value || ""}
+                    onChange={(e) => field.onChange(e.target.value)}
+                  >
                     {businessTypeOptions.map((option) => (
                       <MenuItem key={option.key} value={option.value}>
                         {option.value}
@@ -265,6 +239,7 @@ export default function InputForm({
             <Controller
               name="mainBusinessField"
               control={control}
+              rules={{ required: "Ngành nghề kinh doanh chính là bắt buộc" }}
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -275,6 +250,8 @@ export default function InputForm({
                   variant="outlined"
                   fullWidth
                   value={field.value || ""}
+                  error={!!errors.mainBusinessField}
+                  helperText={errors.mainBusinessField?.message}
                 />
               )}
             />
@@ -284,6 +261,7 @@ export default function InputForm({
               render={({ field }) => (
                 <DatePicker
                   {...field}
+                  value={field.value ? new Date(field.value) : null}
                   label="Ngày cấp GPKD"
                   slotProps={{
                     textField: {
@@ -300,6 +278,7 @@ export default function InputForm({
             <Controller
               name="registrationCity"
               control={control}
+              rules={{ required: "Tỉnh/Thành phố ĐKKD là bắt buộc" }}
               render={({ field }) => (
                 <FormControl fullWidth error={!!errors.registrationCity}>
                   <InputLabel>
@@ -309,6 +288,8 @@ export default function InputForm({
                     {...field}
                     label="Tỉnh/Thành phố ĐKKD"
                     onChange={(e) => {
+                      console.log("Selected City:", e.target.value);
+
                       field.onChange(e);
                     }}
                     value={field.value || ""}
@@ -330,6 +311,7 @@ export default function InputForm({
             <Controller
               name="registrationDistrict"
               control={control}
+              rules={{ required: "Quận/Huyện ĐKKD là bắt buộc" }}
               render={({ field }) => (
                 <FormControl fullWidth error={!!errors.registrationDistrict}>
                   <InputLabel>
@@ -338,12 +320,15 @@ export default function InputForm({
                   <Select
                     {...field}
                     label="Quận/Huyện ĐKKD"
-                    disabled={!registrationCity}
+                    disabled={
+                      !registrationCity || registrationCity === "Tất cả"
+                    }
                     onChange={(e) => {
                       setSelectedRegistrationDistrict(e.target.value);
                       field.onChange(e);
                       setValue("registrationWard", "");
                     }}
+                    value={field.value || ""}
                   >
                     {districtOptions.map((option) => (
                       <MenuItem key={option.key} value={option.value}>
@@ -362,6 +347,7 @@ export default function InputForm({
             <Controller
               name="registrationWard"
               control={control}
+              rules={{ required: "Phường/Xã ĐKKD là bắt buộc" }}
               render={({ field }) => (
                 <FormControl fullWidth error={!!errors.registrationWard}>
                   <InputLabel>
@@ -370,10 +356,13 @@ export default function InputForm({
                   <Select
                     {...field}
                     label="Phường/Xã ĐKKD"
-                    disabled={!registrationDistrict}
+                    disabled={
+                      !registrationDistrict || registrationDistrict === "Tất cả"
+                    }
                     onChange={(e) => {
                       field.onChange(e);
                     }}
+                    value={field.value || ""}
                   >
                     {registrationWardOptions.map((option) => (
                       <MenuItem key={option.key} value={option.value}>
@@ -424,6 +413,13 @@ export default function InputForm({
             <Controller
               name="email"
               control={control}
+              rules={{
+                required: "Email là bắt buộc",
+                pattern: {
+                  value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                  message: "Email không hợp lệ",
+                },
+              }}
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -432,6 +428,8 @@ export default function InputForm({
                   variant="outlined"
                   fullWidth
                   value={field.value || ""}
+                  error={!!errors.email}
+                  helperText={errors.email?.message}
                 />
               )}
             />
@@ -451,6 +449,8 @@ export default function InputForm({
                   variant="outlined"
                   fullWidth
                   value={field.value || ""}
+                  error={!!errors.phoneNumber}
+                  helperText={errors.phoneNumber?.message}
                 />
               )}
             />
@@ -487,14 +487,13 @@ export default function InputForm({
                     {...field}
                     label="Quận/Huyện hoạt động KD"
                     value={field.value || ""}
-                    disabled={!operationCity}
+                    disabled={!operationCity || operationCity === "Tất cả"}
                     onChange={(e) => {
                       setSelectedOperationDistrict(e.target.value);
                       field.onChange(e);
                       setValue("operationWard", "");
                     }}
                   >
-                    <MenuItem value="">Không chọn</MenuItem>
                     {districtOptions.map((option) => (
                       <MenuItem key={option.key} value={option.value}>
                         {option.value}
@@ -513,12 +512,14 @@ export default function InputForm({
                   <Select
                     {...field}
                     label="Phường/Xã hoạt động KD"
-                    disabled={!operationDistrict}
+                    disabled={
+                      !operationDistrict || operationDistrict === "Tất cả"
+                    }
                     onChange={(e) => {
                       field.onChange(e);
                     }}
+                    value={field.value || ""}
                   >
-                    <MenuItem value="">Không chọn</MenuItem>
                     {operationWardOptions.map((option) => (
                       <MenuItem key={option.key} value={option.value}>
                         {option.value}
@@ -577,6 +578,8 @@ export default function InputForm({
           />
         </div>
       </form>
+
+      {/* Notify */}
       {alert && (
         <Alert
           content={alert.content}

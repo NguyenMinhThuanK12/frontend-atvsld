@@ -1,5 +1,6 @@
 "use client";
 
+import BusinessPage from "@/libs/atvsld/pages/Business/BusinessPage";
 import DepartmentPage from "@/libs/atvsld/pages/DepartmentPage";
 // import DepartmentPage from "@/libs/atvsld/pages/DepartmentPageDemo2";
 import { useState } from "react";
@@ -7,7 +8,8 @@ import { useState } from "react";
 export default function Page() {
   return (
     <div className="pt-20 flex flex-col items-center text-xl text-gray-700 h-full overflow-hidden">
-      <DepartmentPage />
+      {/* <DepartmentPage /> */}
+      <BusinessPage />
     </div>
   );
 }

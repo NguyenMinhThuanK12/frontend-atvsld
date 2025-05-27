@@ -1,11 +1,11 @@
 import { UUID } from "crypto";
 import { BusinessType } from "../../core/enums/businessType";
 
-export interface Department {
-  id: number;
+export interface Business {
+  id: string;
   name: string;
   taxCode: string;
-  establishedDate: Date | null;
+  establishedDate: string | Date | null;
   businessType: BusinessType;
   mainBusinessField: string;
 
