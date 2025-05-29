@@ -57,3 +57,30 @@ export const getWardOptions = (
         { key: "", value: "Không có phường/xã" },
       ];
 };
+
+export const districtCreationOptions = districtsData
+  .filter((district: district) => district.parent_code === "79")
+  .map((district: district) => ({
+    key: district.code,
+    value: district.name_with_type,
+  }));
+
+export const getWardCreationOptions = (
+  selectedDistrict: string,
+  districtOptions: { key: string; value: string }[],
+  wardsData: Ward[]
+): { key: string; value: string }[] => {
+  const district = districtOptions.find((d) => d.value === selectedDistrict);
+  if (!district) {
+    return [{ key: "", value: "Chọn quận/huyện trước" }];
+  }
+
+  const wards = wardsData
+    .filter((ward: Ward) => ward.parent_code === district.key)
+    .map((ward: Ward) => ({
+      key: ward.code,
+      value: ward.name_with_type,
+    }));
+
+  return wards
+};

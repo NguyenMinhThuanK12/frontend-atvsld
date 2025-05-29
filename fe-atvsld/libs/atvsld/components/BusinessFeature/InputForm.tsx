@@ -12,8 +12,9 @@ import {
 import wardsData from "@/public/json/wards.json";
 import {
   cityOptions,
+  districtCreationOptions,
   districtOptions,
-  getWardOptions,
+  getWardCreationOptions,
 } from "../../utils/fetchProvinceJson";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -138,12 +139,21 @@ export default function InputForm({
 
   const registrationWardOptions = useMemo(
     () =>
-      getWardOptions(selectedRegistrationDistrict, districtOptions, wardsData),
+      getWardCreationOptions(
+        selectedRegistrationDistrict,
+        districtOptions,
+        wardsData
+      ),
     [selectedRegistrationDistrict]
   );
 
   const operationWardOptions = useMemo(
-    () => getWardOptions(selectedOperationDistrict, districtOptions, wardsData),
+    () =>
+      getWardCreationOptions(
+        selectedOperationDistrict,
+        districtOptions,
+        wardsData
+      ),
     [selectedOperationDistrict]
   );
 
@@ -273,7 +283,11 @@ export default function InputForm({
                   variant="outlined"
                   fullWidth
                   error={!!errors.taxCode}
-                  helperText={ taxCodeLoading ? "Đang kiểm tra..." : errors.taxCode?.message}
+                  helperText={
+                    taxCodeLoading
+                      ? "Đang kiểm tra..."
+                      : errors.taxCode?.message
+                  }
                   disabled={!!formData?.id}
                   aria-required="true"
                   onChange={(e) => {
@@ -403,8 +417,25 @@ export default function InputForm({
                       setValue("registrationWard", "");
                     }}
                     value={field.value || ""}
+                    MenuProps={{
+                      PaperProps: {
+                        style: {
+                          marginTop: 14, // Adjust margin to align with the select box
+                          maxHeight: 300, // Set maximum height for the dropdown
+                          overflowY: "auto", // Enable vertical scrolling
+                        },
+                      },
+                      anchorOrigin: {
+                        vertical: "bottom", // Open dropdown below the select box
+                        horizontal: "left",
+                      },
+                      transformOrigin: {
+                        vertical: "top", // Align the top of the dropdown with the bottom of the select
+                        horizontal: "left",
+                      },
+                    }}
                   >
-                    {districtOptions.map((option) => (
+                    {districtCreationOptions.map((option) => (
                       <MenuItem key={option.key} value={option.value}>
                         {option.value}
                       </MenuItem>
@@ -437,6 +468,23 @@ export default function InputForm({
                       field.onChange(e);
                     }}
                     value={field.value || ""}
+                    MenuProps={{
+                      PaperProps: {
+                        style: {
+                          marginTop: 14, // Adjust margin to align with the select box
+                          maxHeight: 300, // Set maximum height for the dropdown
+                          overflowY: "auto", // Enable vertical scrolling
+                        },
+                      },
+                      anchorOrigin: {
+                        vertical: "bottom", // Open dropdown below the select box
+                        horizontal: "left",
+                      },
+                      transformOrigin: {
+                        vertical: "top", // Align the top of the dropdown with the bottom of the select
+                        horizontal: "left",
+                      },
+                    }}
                   >
                     {registrationWardOptions.map((option) => (
                       <MenuItem key={option.key} value={option.value}>
@@ -503,7 +551,9 @@ export default function InputForm({
                   fullWidth
                   value={field.value || ""}
                   error={!!errors.email}
-                  helperText={emailLoading ? "Đang kiểm tra..." : errors.email?.message}
+                  helperText={
+                    emailLoading ? "Đang kiểm tra..." : errors.email?.message
+                  }
                   onChange={(e) => {
                     field.onChange(e);
                     debouncedCheckEmail(e.target.value);
@@ -571,8 +621,24 @@ export default function InputForm({
                       field.onChange(e);
                       setValue("operationWard", "");
                     }}
+                    MenuProps={{
+                      PaperProps: {
+                        style: {
+                          maxHeight: 300, // Set maximum height for the dropdown
+                          overflowY: "auto", // Enable vertical scrolling
+                        },
+                      },
+                      anchorOrigin: {
+                        vertical: "bottom", // Open dropdown below the select box
+                        horizontal: "left",
+                      },
+                      transformOrigin: {
+                        vertical: "top", // Align the top of the dropdown with the bottom of the select
+                        horizontal: "left",
+                      },
+                    }}
                   >
-                    {districtOptions.map((option) => (
+                    {districtCreationOptions.map((option) => (
                       <MenuItem key={option.key} value={option.value}>
                         {option.value}
                       </MenuItem>
@@ -597,6 +663,22 @@ export default function InputForm({
                       field.onChange(e);
                     }}
                     value={field.value || ""}
+                    MenuProps={{
+                      PaperProps: {
+                        style: {
+                          maxHeight: 300, // Set maximum height for the dropdown
+                          overflowY: "auto", // Enable vertical scrolling
+                        },
+                      },
+                      anchorOrigin: {
+                        vertical: "bottom", // Open dropdown below the select box
+                        horizontal: "left",
+                      },
+                      transformOrigin: {
+                        vertical: "top", // Align the top of the dropdown with the bottom of the select
+                        horizontal: "left",
+                      },
+                    }}
                   >
                     {operationWardOptions.map((option) => (
                       <MenuItem key={option.key} value={option.value}>

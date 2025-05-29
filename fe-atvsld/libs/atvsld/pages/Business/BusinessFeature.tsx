@@ -1,18 +1,14 @@
 "use client";
 
 import ReviewSubmit from "@/libs/atvsld/components/BusinessFeature/ReviewSubmit";
-import InputForm from "@/libs/atvsld/components/BusinessFeature/InputForm"; // Adjust path if needed
 import CreationPage from "@/libs/atvsld/components/BusinessFeature/CreationPage"; // Adjust path if needed
 import Alert from "@/libs/core/components/Alert/primaryAlert";
-import { CreationBusinessRequest } from "@/libs/shared/atvsld/dto/request/creationBussinessRequest";
-import { UpdateBusinessRequest } from "@/libs/shared/atvsld/dto/request/updateBusinessRequest";
 import { Business } from "@/libs/shared/atvsld/models/business.model";
 import { X } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getBusinessById } from "../../services/api/businessApi";
-import { businessTypeOptions } from "../../utils/fetchEnum";
 import { BusinessType } from "@/libs/shared/core/enums/businessType";
 
 export default function BusinessFeature() {
