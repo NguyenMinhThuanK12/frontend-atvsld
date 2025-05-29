@@ -7,16 +7,18 @@ interface AlertProps {
   content: string;
   type: "success" | "error" | "warning" | "info";
   onClose: () => void;
+  duration?: number; // Duration in milliseconds
 }
 
-const Alert: React.FC<AlertProps> = ({ content, type, onClose }) => {
+const Alert: React.FC<AlertProps> = ({ content, type, onClose, duration = 2000 }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
-    }, 2000);
+    }, duration);
     return () => clearTimeout(timer);
   }, [onClose]);
 
+  const animationDuration = `${duration / 1000}s`; // Convert milliseconds to seconds
   return (
     <div
       style={{
@@ -45,7 +47,7 @@ const Alert: React.FC<AlertProps> = ({ content, type, onClose }) => {
         color={type}
         sx={{
           width: "100px",
-          animation: "progress 2s linear forwards",
+          animation: `progress ${animationDuration} linear forwards`,
           borderRadius: "0 0 8px 8px",
           backgroundColor: "rgba(0, 0, 0, 0.1)",
         }}

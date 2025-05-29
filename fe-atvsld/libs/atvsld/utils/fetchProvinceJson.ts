@@ -1,20 +1,16 @@
 import provincesData from "@/public/json/provinces.json";
 import districtsData from "@/public/json/districts.json";
-import wardsData from "@/public/json/wards.json";
 import { province } from "@/libs/core/models/province";
 import { district } from "@/libs/core/models/district";
 import { Ward } from "@/libs/core/models/ward";
 
 
-export const cityOptions = [
-  { key: "", value: "Tất cả" }, // Add "Tất cả" option
-  ...provincesData
-    .filter((province: province) => province.code === "79")
-    .map((province: province) => ({
-      key: province.code,
-      value: province.name_with_type,
-    })),
-];
+export const cityOptions = provincesData
+  .filter((province: province) => province.code === "79")
+  .map((province: province) => ({
+    key: province.code,
+    value: province.name_with_type,
+  }));
 
 export const districtOptions = [
   { key: "", value: "Tất cả" }, // Add "Tất cả" option
@@ -34,7 +30,6 @@ export const getWardOptions = (
   // If no district is selected or "Tất cả" is selected, return "Tất cả" and a placeholder
   if (!selectedDistrict || selectedDistrict === "Tất cả") {
     return [
-      { key: "", value: "Tất cả" }, // Add "Tất cả" option
       { key: "", value: "Chọn quận/huyện trước" },
     ];
   }
@@ -42,7 +37,6 @@ export const getWardOptions = (
   const district = districtOptions.find((d) => d.value === selectedDistrict);
   if (!district) {
     return [
-      { key: "", value: "Tất cả" }, // Add "Tất cả" option
       { key: "", value: "Chọn quận/huyện trước" },
     ];
   }
@@ -60,7 +54,6 @@ export const getWardOptions = (
         ...wards,
       ]
     : [
-        { key: "", value: "Tất cả" }, // Add "Tất cả" option
         { key: "", value: "Không có phường/xã" },
       ];
 };

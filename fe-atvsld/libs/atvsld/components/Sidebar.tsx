@@ -40,7 +40,7 @@ const Sidebar: React.FC = () => {
 
   const menuItems = useMemo(
     () => [
-      { name: "Quản lý doanh nghiệp", href: "/dashboard/departments" },
+      { name: "Quản lý doanh nghiệp", href: "/dashboard/businesses" },
       { name: "Phân quyền", href: "/dashboard/permissions" },
       { name: "Vai trò", href: "/dashboard/roles" },
       { name: "Tài khoản", href: "/dashboard/users" },

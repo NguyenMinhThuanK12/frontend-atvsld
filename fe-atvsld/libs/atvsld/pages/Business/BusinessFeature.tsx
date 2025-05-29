@@ -12,18 +12,8 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getBusinessById } from "../../services/api/businessApi";
-
-// Assume an API function to fetch business data
-// async function fetchBusiness(id: string): Promise<Business | null> {
-//   try {
-//     const response = await fetch(`/api/businesses/${id}`); // Replace with your API endpoint
-//     if (!response.ok) throw new Error("Failed to fetch business");
-//     return await response.json();
-//   } catch (error) {
-//     console.error("Error fetching business:", error);
-//     return null;
-//   }
-// }
+import { businessTypeOptions } from "../../utils/fetchEnum";
+import { BusinessType } from "@/libs/shared/core/enums/businessType";
 
 export default function BusinessFeature() {
   const params = useParams();
@@ -52,11 +42,6 @@ export default function BusinessFeature() {
     setTimeout(() => setAlert(null), duration);
   };
 
-  // Handle close
-  const handleClose = () => {
-    router.push("/dashboard/businesses");
-  };
-
   const fetchById = async (id: string) => {
     try {
       const response = await getBusinessById(id);
@@ -74,45 +59,48 @@ export default function BusinessFeature() {
     }
   };
 
-  // handle display detail (mode === "view")
-  // useEffect(() => {
-  //   console.log(
-  //     "BusinessFeature useEffect triggered with id:",
-  //     id,
-  //     "and mode:",
-  //     mode
-  //   );
-
-  //   if ((mode === "view" || mode === "update") && id !== "new") {
-  //     fetchById(id);
-  //     console.log("formData after fetch:", formData);
-  //   } else {
-  //     setFormData(null);
-  //     setLoading(false);
-  //   }
-  // }, [id, mode]); 
-
   useEffect(() => {
     if ((mode === "view" || mode === "update") && id !== "new") {
-      fetchById(id).then(() => {
-        console.log("formData after fetch:", formData);
-      });
+      fetchById(id);
     } else {
-      setFormData(null);
+      // mode === "create"
+      setFormData({
+        id: "", // Provide a default or placeholder ID if required
+        name: "",
+        establishedDate: null,
+        businessType: BusinessType.PRIVATE, // Default to the first option
+        registrationCity: "",
+        registrationDistrict: "",
+        registrationWard: "",
+        registrationAddress: null,
+        operationCity: null,
+        operationDistrict: null,
+        operationWard: null,
+        operationAddress: null,
+        foreignName: null,
+        email: "",
+        phoneNumber: null,
+        representativeName: null,
+        representativePhone: null,
+        businessLicenseFile: null,
+        otherDocumentFile: null,
+        taxCode: "",
+        isActive: true,
+        mainBusinessField: "",
+      });
       setLoading(false);
     }
   }, [id, mode]);
 
-  useEffect(() => {
-    console.log("BusinessFeature re-rendered with id:", id, "and mode:", mode);
-  });
-
-  // Handle refresh (e.g., re-fetch data after create/update)
+  // Handle refresh if declaring successfully
   const handleRefresh = () => {
-    // call fetchBusinesses
-    showAlert("Đã cập nhật thông tin doanh nghiệp.", "success");
+    router.push("/dashboard/businesses?declaration=success");
   };
 
+  // Handle close if users want to go back
+  const handleClose = () => {
+    router.push("/dashboard/businesses");
+  };
 
   if (loading) {
     return <div>Loading...</div>;
@@ -148,7 +136,7 @@ export default function BusinessFeature() {
       {mode === "create" && (
         <CreationPage
           onComeBack={handleClose}
-          initialFormData={null}
+          initialFormData={formData}
           mode="create"
           onRefresh={handleRefresh}
         />

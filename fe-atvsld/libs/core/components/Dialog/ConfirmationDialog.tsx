@@ -18,7 +18,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 mb-96 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
         <p className="mb-4 text-lg">{title}</p>
         <div className="flex gap-4">
@@ -26,7 +26,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             content="Đồng ý"
             type="button"
             size="small"
-            color="green"
+            color="primary"
             onClick={onConfirm}
           />
           <CustomizedButton

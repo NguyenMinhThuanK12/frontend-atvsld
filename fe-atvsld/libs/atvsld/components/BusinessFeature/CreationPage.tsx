@@ -3,20 +3,20 @@ import React, { useEffect, useState } from "react";
 import InputForm from "./InputForm";
 import ReviewSubmit from "./ReviewSubmit";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
-import { Box, Step, StepLabel, Stepper } from "@mui/material";
+import { Box, CircularProgress, Step, StepLabel, Stepper } from "@mui/material";
 import { CheckCheck, ChevronRight, X } from "lucide-react";
 import TextButton from "@/libs/core/components/Button/textBtn";
 import PrimaryButton from "@/libs/core/components/Button/primaryBtn";
 import { QontoConnector } from "@/libs/core/styles/CustomizedConnector";
 import { FieldErrors, UseFormHandleSubmit } from "react-hook-form";
-import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { updateBusiness } from "../../services/api/businessApi";
+import { createBusiness, updateBusiness } from "../../services/api/businessApi";
 import { UpdateBusinessRequest } from "@/libs/shared/atvsld/dto/request/updateBusinessRequest";
+import { CreationBusinessRequest } from "@/libs/shared/atvsld/dto/request/creationBussinessRequest";
 
 interface CreationPageProps {
   onComeBack: () => void;
-  initialFormData?: Business | null;
+  initialFormData: Business | null;
   mode: "create" | "update";
   onRefresh?: () => void;
 }
@@ -42,6 +42,7 @@ export default function CreationPage({
   const [alert, setAlert] = useState<{
     content: string;
     type: "success" | "error" | "warning" | "info";
+    duration?: number; // Duration in milliseconds
   } | null>(null);
 
   const showAlert = (
@@ -49,7 +50,7 @@ export default function CreationPage({
     type: "success" | "error" | "warning" | "info",
     duration = 2000
   ) => {
-    setAlert({ content, type });
+    setAlert({ content, type, duration });
     setTimeout(() => setAlert(null), duration);
   };
 
@@ -61,20 +62,12 @@ export default function CreationPage({
   const [handleSubmitForm, setHandleSubmitForm] =
     useState<UseFormHandleSubmit<Business> | null>(null);
   const [isFormReady, setIsFormReady] = useState(false);
-  const [triggerValidation, setTriggerValidation] = useState<
-    (() => Promise<boolean>) | null
-  >(null);
   const steps = ["Thông tin doanh nghiệp", "Xác nhận đăng ký"];
-
-  //   useEffect(() => {
-  //     console.log("Initial form data:", initialFormData);
-  //     console.log("Form data state:", formData);
-  //   }, [initialFormData, formData]);
 
   const pages: Record<number, Page> = {
     0: {
       title: steps[0],
-      content: (formData, setFormData, triggerValidation) => (
+      content: (formData, setFormData) => (
         <InputForm
           formData={formData}
           setFormData={setFormData}
@@ -82,7 +75,7 @@ export default function CreationPage({
           setFormErrors={setFormErrors}
           setHandleSubmit={(handleSubmit) => {
             setHandleSubmitForm(() => handleSubmit);
-            setIsFormReady(true); // Mark form as ready once handleSubmit is set
+            setIsFormReady(true);
           }}
         />
       ),
@@ -94,11 +87,8 @@ export default function CreationPage({
   };
 
   useEffect(() => {
-    console.log(
-      "Form data after file upload, trigger from Creation page:",
-      formData
-    );
-  }, [formData]);
+    console.log("Form Data after changing:", formData);
+  }, [initialFormData]);
 
   // handle next
   const handleNext = async () => {
@@ -129,8 +119,18 @@ export default function CreationPage({
           Math.min(prevActiveStep + 1, Object.keys(pages).length - 1)
         );
       },
-      () => {
-        console.log("Validation failed:", formErrors);
+      (errors) => {
+        console.error("Form submission errors:", errors);
+
+        // const errorMessages = [];
+        // if (errors.taxCode?.message) errorMessages.push(errors.taxCode.message);
+        // if (errors.email?.message) errorMessages.push(errors.email.message);
+        // showAlert(
+        //   errorMessages.length > 0
+        //     ? errorMessages.join(", ")
+        //     : "Vui lòng điền đầy đủ thông tin bắt buộc.",
+        //   "error"
+        // );
         showAlert("Vui lòng điền đầy đủ thông tin bắt buộc.", "error");
       }
     )();
@@ -147,62 +147,100 @@ export default function CreationPage({
     }
   };
 
+  const [loading, setLoading] = useState(false); // Add loading state
+  const [success, setSuccess] = useState(false); // Existing success state
+
   // handle submit
-    const handleSubmit = async () => {
-      
+  const handleSubmit = async () => {
+    setLoading(true);
+    setSuccess(false);
     if (!formData) {
+      setLoading(false);
       showAlert("Vui lòng điền đầy đủ thông tin doanh nghiệp.", "error");
       return;
     } else if (mode === "create") {
-      // Call API to create business
-      showAlert("Đăng ký doanh nghiệp thành công!", "success");
-    } else if (mode === "update") {
-        const updatedBusiness: UpdateBusinessRequest = {
-          name: formData.name || "",
-          establishedDate: formData.establishedDate
-            ? format(
-                new Date(formData.establishedDate),
-                "yyyy-MM-dd'T'HH:mm:ssXXX"
-              )
-            : null,
-            businessType: formData.businessType || "",
-          mainBusinessField: formData.mainBusinessField || "",
-          registrationCity: formData.registrationCity || "",
-          registrationDistrict: formData.registrationDistrict || "",
-          registrationWard: formData.registrationWard || "",
-          registrationAddress: formData.registrationAddress || "",
-          operationCity: formData.operationCity || "",
-          operationDistrict: formData.operationDistrict || "",
-          operationWard: formData.operationWard || "",
-          operationAddress: formData.operationAddress || "",
-          foreignName: formData.foreignName || "",
-          email: formData.email || "",
-          phoneNumber: formData.phoneNumber || "",
-          representativeName: formData.representativeName || "",
-          representativePhone: formData.representativePhone || "",
-          businessLicenseFile: formData.businessLicenseFile || null,
-          otherDocumentFile: formData.otherDocumentFile || null,
-        };
-        try {
-            const response = await updateBusiness(
-              formData.id || "",
-              updatedBusiness
-            );
-            showAlert("Cập nhật doanh nghiệp thành công!", "success");
-            onComeBack();
-            if (onRefresh) onRefresh();
+      const creationBusiness: CreationBusinessRequest = {
+        name: formData.name || "",
+        taxCode: formData.taxCode || "",
+        establishedDate: formData.establishedDate || "",
+        businessType: formData.businessType || "",
+        mainBusinessField: formData.mainBusinessField || "",
+        registrationCity: formData.registrationCity || "",
+        registrationDistrict: formData.registrationDistrict || "",
+        registrationWard: formData.registrationWard || "",
+        registrationAddress: formData.registrationAddress || "",
+        operationCity: formData.operationCity || "",
+        operationDistrict: formData.operationDistrict || "",
+        operationWard: formData.operationWard || "",
+        operationAddress: formData.operationAddress || "",
+        foreignName: formData.foreignName || "",
+        email: formData.email || "",
+        phoneNumber: formData.phoneNumber || "",
+        representativeName: formData.representativeName || "",
+        representativePhone: formData.representativePhone || "",
+        businessLicenseFile: formData.businessLicenseFile || null,
+        otherDocumentFile: formData.otherDocumentFile || null,
+      };
+      try {
+        const response = await createBusiness(creationBusiness);
+        if (response.status !== 201) {
+          showAlert("Không thể cập nhật doanh nghiệp.", "error");
+          console.log("message from backend: ", response.message);
+          setLoading(false);
+          return;
+        }
+        setSuccess(true);
       } catch (error) {
-          showAlert("Lỗi khi cập nhật doanh nghiệp.", "error");
-            console.error("Error updating business:", error);
+        showAlert("Lỗi khi tạo doanh nghiệp.", "error");
+        console.error("Error creating business:", error);
+        setLoading(false);
+        return;
       }
-
-      showAlert("Cập nhật doanh nghiệp thành công!", "success");
+    } else if (mode === "update") {
+      const updatedBusiness: UpdateBusinessRequest = {
+        name: formData.name || "",
+        establishedDate: formData.establishedDate || "",
+        businessType: formData.businessType || "",
+        mainBusinessField: formData.mainBusinessField || "",
+        registrationCity: formData.registrationCity || "",
+        registrationDistrict: formData.registrationDistrict || "",
+        registrationWard: formData.registrationWard || "",
+        registrationAddress: formData.registrationAddress || "",
+        operationCity: formData.operationCity || "",
+        operationDistrict: formData.operationDistrict || "",
+        operationWard: formData.operationWard || "",
+        operationAddress: formData.operationAddress || "",
+        foreignName: formData.foreignName || "",
+        email: formData.email || "",
+        phoneNumber: formData.phoneNumber || "",
+        representativeName: formData.representativeName || "",
+        representativePhone: formData.representativePhone || "",
+        businessLicenseFile: formData.businessLicenseFile || null,
+        otherDocumentFile: formData.otherDocumentFile || null,
+      };
+      try {
+        const response = await updateBusiness(
+          formData.id || "",
+          updatedBusiness
+        );
+        if (response.status !== 200) {
+          showAlert("Không thể cập nhật doanh nghiệp.", "error");
+          console.log("message from backend: ", response.message);
+          setLoading(false);
+          return;
+        }
+        setSuccess(true);
+      } catch (error) {
+        showAlert("Lỗi khi cập nhật doanh nghiệp.", "error");
+        console.error("Error updating business:", error);
+        setLoading(false);
+      }
     }
-    // onComeBack();
-    // if (onRefresh) onRefresh();
+    setLoading(false);
+    if (onRefresh) {
+      onRefresh();
+    }
   };
-
-  const router = useRouter();
 
   return (
     <div className="w-full h-screen overflow-auto bg-white rounded-lg shadow-md p-6 flex flex-col items-center justify-between z-50">
@@ -219,11 +257,8 @@ export default function CreationPage({
         <div className="h-7 w-7 cursor-pointer absolute right-0 top-0">
           <X
             onClick={(e) => {
-              console.log(
-                "Closing CreationPage and navigating back to businesses"
-              );
               e.preventDefault();
-              router.push("/dashboard/businesses");
+              onComeBack();
             }}
             aria-label="Đóng"
           />
@@ -249,18 +284,28 @@ export default function CreationPage({
         <PrimaryButton
           content={activeStep === steps.length - 1 ? "Hoàn tất" : "Tiếp theo"}
           icon={
-            activeStep === steps.length - 1 ? <CheckCheck /> : <ChevronRight />
+            activeStep === steps.length - 1 ? (
+              loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                <CheckCheck />
+              )
+            ) : (
+              <ChevronRight />
+            )
           }
           onClick={activeStep === steps.length - 1 ? handleSubmit : handleNext}
           aria-label={
             activeStep === steps.length - 1 ? "Hoàn tất đăng ký" : "Tiếp tục"
           }
+          disabled={loading}
         />
       </div>
       {alert && (
         <Alert
           content={alert.content}
           type={alert.type}
+          duration={alert.duration}
           onClose={() => setAlert(null)}
         />
       )}

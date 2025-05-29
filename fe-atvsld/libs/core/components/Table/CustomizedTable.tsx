@@ -255,12 +255,12 @@ export default function CustomizedTable<T extends { id: string; isActive?: boole
         </Table>
       </TableContainer>
 
-      {selectedRows.length > 0 && (
+      {/* {selectedRows.length > 0 && (
         <SelectedItemForDeleting
           selectedRowsQuantity={selectedRows.length}
           onDelete={() => onDelete?.(selectedRows)}
         />
-      )}
+      )} */}
     </div>
   );
 }

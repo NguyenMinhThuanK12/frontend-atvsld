@@ -1,32 +1,18 @@
 import { useState } from "react";
 import { X, Trash2 } from "lucide-react";
 import CustomizedButton from "@/libs/core/components/Button/customizedBtn";
-import ConfirmationDialog from "@/libs/core/components/Dialog/ConfirmationDialog";
 
 interface SelectedItemForDeletingProps<T> {
   selectedRowsQuantity: number;
-  onDelete?: (row: T[]) => void;
+  onClose?: () => void;
+  onOpenDeleteDialog?: () => void;
 }
 
 export default function SelectedItemForDeleting<T>({
   selectedRowsQuantity,
-  onDelete = () => {},
+  onClose = () => {},
+  onOpenDeleteDialog = () => {},
 }: SelectedItemForDeletingProps<T>) {
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-
-  const handleDeleteClick = () => {
-    setIsConfirmDialogOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    onDelete([]);
-    setIsConfirmDialogOpen(false);
-  };
-
-  const handleCancelDelete = () => {
-    setIsConfirmDialogOpen(false);
-  };
-
   return (
     <div
       className="container w-86 h-10 mx-auto flex items-center justify-between bg-white shadow-lg rounded-md
@@ -44,21 +30,18 @@ export default function SelectedItemForDeleting<T>({
           color="red"
           icon={<Trash2 className="text-white" />}
           sx={{ minWidth: "50px", fontSize: "14px" }}
-          // onClick={handleDeleteClick}
-          onClick={() => { onDelete([]) }}
+          onClick={() => {
+            onOpenDeleteDialog();
+          }}
         />
         <div className="flex items-center justify-center w-6 h-6 cursor-pointer">
-          <X className="text-gray-500"/>
-
+          <X className="text-gray-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+          }}/>
         </div>
       </div>
-
-      {/* <ConfirmationDialog
-        title="Xác nhận xóa các dữ liệu đã chọn?"
-        isOpen={isConfirmDialogOpen}
-        onConfirm={handleConfirmDelete}
-        onCancel={handleCancelDelete}
-      /> */}
     </div>
   );
 }

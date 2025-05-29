@@ -30,6 +30,8 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import LicenseTable from "./LicenseTable";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 import { isValid, parse } from "date-fns";
+import { debounce } from "lodash";
+import { checkDuplicateEmail, checkTaxCodeExists } from "../../services/api/businessApi";
 
 interface InputFormProps {
   formData: Business | null;
@@ -54,27 +56,29 @@ export default function InputForm({
   setHandleSubmit,
   setFormErrors,
 }: InputFormProps) {
-    let parsedEstablishedDate: Date | null = null;
-    if (formData?.establishedDate) {
-      if (typeof formData.establishedDate === "string") {
-        parsedEstablishedDate = parse(
-          formData.establishedDate,
-          "yyyy-MM-dd",
-          new Date()
-        );
-        if (!isValid(parsedEstablishedDate)) {
-          parsedEstablishedDate = null; // Fallback if parsing fails
-        }
-      } else if (formData.establishedDate instanceof Date) {
-        parsedEstablishedDate = formData.establishedDate;
+  let parsedEstablishedDate: Date | null = null;
+  if (formData?.establishedDate) {
+    if (typeof formData.establishedDate === "string") {
+      parsedEstablishedDate = parse(
+        formData.establishedDate,
+        "yyyy-MM-dd",
+        new Date()
+      );
+      if (!isValid(parsedEstablishedDate)) {
+        parsedEstablishedDate = null; // Fallback if parsing fails
       }
+    } else if (formData.establishedDate instanceof Date) {
+      parsedEstablishedDate = formData.establishedDate;
     }
+  }
   const {
     control,
     watch,
     setValue,
     formState: { errors },
     handleSubmit,
+    setError,
+    clearErrors,
   } = useForm<Business>({
     defaultValues: {
       ...formData,
@@ -146,6 +150,7 @@ export default function InputForm({
   // handle file upload
   const handleFileUpload = (id: number, file: File | null) => {
     console.log("File uploaded:", file, "for ID:", id); // Keep the log
+
     setFormData((prevFormData) => {
       if (!prevFormData) return prevFormData;
 
@@ -161,7 +166,74 @@ export default function InputForm({
 
       return updatedFormData;
     });
+  };
+
+  const [taxCodeLoading, setTaxCodeLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+
+  // Debounced function for checking tax code
+  const debouncedCheckTaxCode = useCallback(
+    debounce(async (taxCode: string) => {
+      if (!taxCode) return; // Skip if taxCode is empty
+
+      setTaxCodeLoading(true);
+      try {
+        const response = await checkTaxCodeExists(taxCode);
+        if (response.data) {
+          setError("taxCode", {
+            type: "manual",
+            message: response.message,
+          });
+        } else {
+          clearErrors("taxCode");
+        }
+      } catch (error) {
+        console.error("Error checking tax code:", error);
+        setError("taxCode", {
+          type: "manual",
+          message: "Lỗi kiểm tra mã số thuế",
+        });
+      } finally {
+        setTaxCodeLoading(false);
+      }
+    }, 500), // 500ms debounce delay
+    []
+  );
+
+  // Debounced function for checking email
+  const debouncedCheckEmail = useCallback(
+    debounce(async (email: string) => {
+      if (
+        !email ||
+        !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)
+      )
+        return; // Skip if email is empty or invalid
+
+      setEmailLoading(true);
+      try {
+        const response = await checkDuplicateEmail(email);
+        if (response.data) {
+          setError("email", { type: "pattern", message: response.message });
+        } else {
+          clearErrors("email");
+        }
+      } catch (error) {
+        console.error("Error checking email:", error);
+        setError("email", { type: "pattern", message: "Lỗi kiểm tra email" });
+      } finally {
+        setEmailLoading(false);
+      }
+    }, 500), // 500ms debounce delay
+    []
+  );
+
+  // Clean up debounced functions on component unmount
+  useEffect(() => {
+    return () => {
+      debouncedCheckTaxCode.cancel();
+      debouncedCheckEmail.cancel();
     };
+  }, [debouncedCheckTaxCode, debouncedCheckEmail]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
@@ -170,7 +242,7 @@ export default function InputForm({
           <h2 className="text-lg font-semibold mb-4">
             {mode === "update"
               ? "Cập nhật thông tin doanh nghiệp"
-              : "Thông tin doanh nghiệp"}
+              : "Thêm mới doanh nghiệp"}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <Controller
@@ -201,9 +273,13 @@ export default function InputForm({
                   variant="outlined"
                   fullWidth
                   error={!!errors.taxCode}
-                  helperText={errors.taxCode?.message}
+                  helperText={ taxCodeLoading ? "Đang kiểm tra..." : errors.taxCode?.message}
                   disabled={!!formData?.id}
                   aria-required="true"
+                  onChange={(e) => {
+                    field.onChange(e);
+                    debouncedCheckTaxCode(e.target.value);
+                  }}
                 />
               )}
             />
@@ -288,8 +364,6 @@ export default function InputForm({
                     {...field}
                     label="Tỉnh/Thành phố ĐKKD"
                     onChange={(e) => {
-                      console.log("Selected City:", e.target.value);
-
                       field.onChange(e);
                     }}
                     value={field.value || ""}
@@ -429,7 +503,11 @@ export default function InputForm({
                   fullWidth
                   value={field.value || ""}
                   error={!!errors.email}
-                  helperText={errors.email?.message}
+                  helperText={emailLoading ? "Đang kiểm tra..." : errors.email?.message}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    debouncedCheckEmail(e.target.value);
+                  }}
                 />
               )}
             />
@@ -558,6 +636,12 @@ export default function InputForm({
             <Controller
               name="representativePhone"
               control={control}
+              rules={{
+                pattern: {
+                  value: /^\d+$/,
+                  message: "Số điện thoại chỉ được chứa chữ số",
+                },
+              }}
               render={({ field }) => (
                 <TextField
                   {...field}

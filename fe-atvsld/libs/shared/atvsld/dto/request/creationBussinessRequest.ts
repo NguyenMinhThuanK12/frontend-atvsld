@@ -3,8 +3,9 @@ import { BusinessType } from "@/libs/shared/core/enums/businessType";
 export interface CreationBusinessRequest {
   name: string;
   taxCode: string;
-  establishedDate: Date;
+  establishedDate: Date | string | null;
   businessType: BusinessType;
+  mainBusinessField: string;
   registrationCity: string;
   registrationDistrict: string;
   registrationWard: string;
@@ -21,6 +22,6 @@ export interface CreationBusinessRequest {
   representativeName?: string | null;
   representativePhone?: string | null;
 
-  businessLicenseFile?: File | null;
-  otherDocumentFile?: File | null;
+  businessLicenseFile?: File | string | null;
+  otherDocumentFile?: File | string | null;
 }

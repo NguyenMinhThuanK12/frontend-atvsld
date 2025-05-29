@@ -14,13 +14,14 @@ import {
 } from "@mui/material";
 import { DataGrid, GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import { Eye, Pencil } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import ConfirmationDialog from "../Dialog/ConfirmationDialog";
 
 export interface ColumnConfig {
   field: string;
   headerName: string;
   inputType?: "text" | "select";
-  options?: { key: string; value: string }[];
+  options?: { key: string; value: string | undefined }[];
   flex?: number;
   minWidth?: number;
 }
@@ -28,15 +29,16 @@ export interface ColumnConfig {
 interface CustomDataGridProps<T> {
   rows: T[];
   columnsConfig: ColumnConfig[];
-  onRowSelectionChange?: (selectedRows: T[]) => void;
+  onRowSelectionChange: (selectedRows: T[]) => void;
   pageSizeOptions?: number[];
   initialPageSize?: number;
-  onStatusChange?: (rowId: string, newStatus: boolean) => void;
-  onView?: (row: T) => void;
-  onEdit?: (row: T) => void;
-  onDelete?: (rows: T[]) => void;
-  onFilterChange?: (field: string, value: string) => void;
-  filters?: Record<string, string>;
+  onStatusChange: (rowId: string, newStatus: boolean) => void;
+  onView: (row: T) => void;
+  onEdit: (row: T) => void;
+  onDelete: (rows: T[]) => void;
+  onFilterChange: (field: string, value: string) => void;
+  filters: Record<string, string>;
+  onFilter?: (filters: Record<string, string>) => void;
 }
 
 export default function CustomizedDataGrid<
@@ -49,12 +51,14 @@ export default function CustomizedDataGrid<
   onView,
   onEdit,
   onDelete,
-  onFilterChange,
+  onFilterChange, 
   filters = {},
+  onFilter,
   pageSizeOptions = [5, 10, 15, 20],
   initialPageSize = 5,
 }: CustomDataGridProps<T>) {
   const [selectedRows, setSelectedRows] = useState<T[]>([]);
+  const [isDeleted, setIsDeleted] = useState(false);
 
   // Handle row selection
   const handleRowSelection = (selectionModel: GridRowSelectionModel) => {
@@ -63,14 +67,8 @@ export default function CustomizedDataGrid<
     const selectedIds = Array.from(selectionModel.ids) as string[];
     const selectedData = rows.filter((row) => selectedIds.includes(row.id));
     setSelectedRows(selectedData);
+    setIsDeleted(true);
     onRowSelectionChange(selectedData);
-  };
-
-  // Handle toggle status
-  const handleStatusToggle = (rowId: string, currentStatus: boolean) => {
-    if (onStatusChange) {
-      onStatusChange(rowId, !currentStatus);
-    }
   };
 
   const menuProps: Partial<MenuProps> = {
@@ -82,10 +80,26 @@ export default function CustomizedDataGrid<
     },
   };
 
-  const [selectValues, setSelectValues] = useState<Record<string, string>>({});
-  const handleSelectChange = (field: string, value: string) => {
-    setSelectValues((prev) => ({ ...prev, [field]: value }));
+  const handleApplyFilter = (field: string, value: string) => {
+    if (value === "Tất cả") {
+      const updatedFilters = { ...filters };
+      delete updatedFilters[field];
+      if (onFilter) {
+        onFilter(updatedFilters);
+      }
+    } else {
+      if (onFilter) {
+        onFilter({ ...filters, [field]: value });
+      }
+    }
+    if (onFilterChange) {
+      onFilterChange(field, value);
+    }
   };
+
+  const [selectedOption, setSelectedOption] = useState(
+    
+  );
 
   const columns: GridColDef[] = [
     ...columnsConfig.map((col) => ({
@@ -105,6 +119,8 @@ export default function CustomizedDataGrid<
               variant="outlined"
               size="small"
               fullWidth
+              value={filters[col.field] || ""}
+              onChange={(e) => onFilterChange(col.field, e.target.value)}
               sx={{ fontSize: 14, minHeight: 36 }}
               //   aria-label={`Header input for ${col.field}`}
             />
@@ -114,12 +130,21 @@ export default function CustomizedDataGrid<
               <Select
                 className="w-full bg-white"
                 variant="outlined"
-                onChange={(e) => onFilterChange?.(col.field, e.target.value)}
-                value={filters[col.field] || ""}
+                // onChange={(e) => handleApplyFilter(col.field, e.target.value)}
+                onChange={(e) => onFilterChange(col.field, e.target.value)}
+                value={
+                  filters[col.field] ||
+                  (col.options && col.options.length > 0
+                    ? col.options[0].value
+                    : "")
+                }
                 sx={{ fontSize: 14, minHeight: 36 }}
                 MenuProps={menuProps}
-                disabled={col.field === "ward" && !filters["district"]}
-                // aria-label={`Header select for ${col.field}`}
+                disabled={
+                  col.field === "ward" &&
+                  (!filters["district"] || filters["district"] === "Tất cả")
+                }
+                aria-label={`Header select for ${col.field}`}
               >
                 {col.options.map((option) => (
                   <MenuItem key={option.key} value={option.value}>
@@ -153,7 +178,7 @@ export default function CustomizedDataGrid<
               <Switch
                 checked={params.row.isActive ?? false}
                 onChange={() =>
-                  handleStatusToggle(
+                  onOpenStatusDialog(
                     params.row.id,
                     params.row.isActive ?? false
                   )
@@ -202,6 +227,54 @@ export default function CustomizedDataGrid<
     },
   ];
 
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string;
+    isOpen: boolean;
+    onConfirm: () => void;
+    onCancel: () => void;
+  }>({
+    title: "",
+    isOpen: false,
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
+
+  const onOpenDeleteDialog = () => {
+    setConfirmDialog({
+      title: "Xác nhận xóa các dữ liệu đã chọn?",
+      isOpen: true,
+      onConfirm: () => {
+        if (onDelete) {
+          onDelete(selectedRows);
+        }
+        setSelectedRows([]);
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => {
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
+  };
+
+  // Handle toggle status
+  const onOpenStatusDialog = (rowId: string, isBanned: boolean) => {
+    setConfirmDialog({
+      title: isBanned
+        ? "Xác nhận chặn doanh nghiệp này ?"
+        : "Xác nhận bỏ chặn doanh nghiệp này ?",
+      isOpen: true,
+      onConfirm: () => {
+        if (onStatusChange) {
+          onStatusChange(rowId, !isBanned);
+        }
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => {
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
+  };
+
   return (
     <div className="container w-full flex flex-col items-center justify-between h-full mt-5">
       <Box
@@ -231,9 +304,10 @@ export default function CustomizedDataGrid<
           "& .MuiDataGrid-cellEmpty": {
             display: "none",
           },
-          "& .MuiDataGrid-columnHeaderTitleContainerContent .MuiCheckbox-root": {
-            marginBottom: "3rem",
-          },
+          "& .MuiDataGrid-columnHeaderTitleContainerContent .MuiCheckbox-root":
+            {
+              marginBottom: "3rem",
+            },
           "& .MuiDataGrid-row .MuiDataGrid-cell": {
             padding: "14px 0px",
             display: "flex",
@@ -242,7 +316,7 @@ export default function CustomizedDataGrid<
           },
           "& .MuiDataGrid-cell:not(.MuiDataGrid-cellCheckbox)": {
             paddingLeft: "18px",
-          }
+          },
         }}
       >
         <DataGrid
@@ -259,7 +333,6 @@ export default function CustomizedDataGrid<
                 </span>
               </div>
             ),
-
           }}
           slotProps={{
             loadingOverlay: {
@@ -292,9 +365,22 @@ export default function CustomizedDataGrid<
         />
       </Box>
 
-      {selectedRows.length > 0 && (
-        <SelectedItemForDeleting selectedRowsQuantity={selectedRows.length} onDelete={onDelete} />
+      {selectedRows.length > 0 && isDeleted && (
+        <SelectedItemForDeleting
+          selectedRowsQuantity={selectedRows.length}
+          onOpenDeleteDialog={onOpenDeleteDialog}
+          onClose={() => {
+            setIsDeleted(false);
+          }}
+        />
       )}
+
+      <ConfirmationDialog
+        title={confirmDialog.title}
+        isOpen={confirmDialog.isOpen}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={confirmDialog.onCancel}
+      />
     </div>
   );
 }
