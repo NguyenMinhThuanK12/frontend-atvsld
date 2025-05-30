@@ -11,8 +11,8 @@ import { QontoConnector } from "@/libs/core/styles/CustomizedConnector";
 import { FieldErrors, UseFormHandleSubmit } from "react-hook-form";
 import { format } from "date-fns";
 import { createBusiness, updateBusiness } from "../../services/api/businessApi";
-import { UpdateBusinessRequest } from "@/libs/shared/atvsld/dto/request/updateBusinessRequest";
-import { CreationBusinessRequest } from "@/libs/shared/atvsld/dto/request/creationBussinessRequest";
+import { UpdateBusinessRequest } from "@/libs/shared/atvsld/dto/request/business/updateBusinessRequest";
+import { CreationBusinessRequest } from "@/libs/shared/atvsld/dto/request/business/creationBussinessRequest";
 
 interface CreationPageProps {
   onComeBack: () => void;

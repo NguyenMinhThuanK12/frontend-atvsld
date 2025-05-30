@@ -4,12 +4,13 @@ import React from "react";
 import { TextField } from "@mui/material";
 
 interface PrimaryTextFieldProps {
-  label: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  label: string | React.ReactNode;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   required?: boolean;
   error?: boolean;
+  className?: string;
 }
 
 const PrimaryTextField: React.FC<PrimaryTextFieldProps> = ({
@@ -19,9 +20,11 @@ const PrimaryTextField: React.FC<PrimaryTextFieldProps> = ({
   placeholder,
   required = false,
   error = false,
+  className = "",
 }) => {
   return (
     <TextField
+      className={className}
       required={required}
       label={label}
       variant="outlined"

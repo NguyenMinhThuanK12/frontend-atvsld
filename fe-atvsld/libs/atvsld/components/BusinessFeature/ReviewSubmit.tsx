@@ -1,16 +1,19 @@
-import { CreationBusinessRequest } from '@/libs/shared/atvsld/dto/request/creationBussinessRequest'
-import { UpdateBusinessRequest } from '@/libs/shared/atvsld/dto/request/updateBusinessRequest'
-import { Business } from '@/libs/shared/atvsld/models/business.model'
-import { Typography } from '@mui/material';
-import React, { useEffect } from 'react'
-import LicenseTable from './LicenseTable';
+import { CreationBusinessRequest } from "@/libs/shared/atvsld/dto/request/business/creationBussinessRequest";
+import { UpdateBusinessRequest } from "@/libs/shared/atvsld/dto/request/business/updateBusinessRequest";
+import { Business } from "@/libs/shared/atvsld/models/business.model";
+import { Typography } from "@mui/material";
+import React, { useEffect } from "react";
+import LicenseTable from "./LicenseTable";
 
 interface ReviewSubmitProps {
-    onComeBack?: () => void;
-    formData: Business | null;
+  onComeBack?: () => void;
+  formData: Business | null;
 }
 
-export default function ReviewSubmit({ onComeBack, formData }: ReviewSubmitProps) {
+export default function ReviewSubmit({
+  onComeBack,
+  formData,
+}: ReviewSubmitProps) {
   // debug
   useEffect(() => {
     console.log("ReviewSubmit formData:", formData);

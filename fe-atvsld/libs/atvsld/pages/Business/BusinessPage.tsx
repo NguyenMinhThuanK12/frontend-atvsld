@@ -1,18 +1,21 @@
 import { BusinessType } from "@/libs/shared/core/enums/businessType";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { deleteBusiness, filterBusinesses, getBusinesses, updateBusinessStatus } from "../../services/api/businessApi";
+import {
+  deleteBusiness,
+  filterBusinesses,
+  getBusinesses,
+  updateBusinessStatus,
+} from "../../services/api/businessApi";
 import { districtOptions, getWardOptions } from "../../utils/fetchProvinceJson";
 import wardsData from "@/public/json/wards.json";
 import { businessTypeOptions } from "../../utils/fetchEnum";
 import CustomizedDataGrid, {
   ColumnConfig,
 } from "@/libs/core/components/Table/CustomizedDataGrid";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 import Header from "../../components/Header";
-import { Business } from "@/libs/shared/atvsld/models/business.model";
-import ConfirmationDialog from "@/libs/core/components/Dialog/ConfirmationDialog";
-import { QueryBusinessRequest } from "@/libs/shared/atvsld/dto/request/queryBussinessRequest";
+import { QueryBusinessRequest } from "@/libs/shared/atvsld/dto/request/business/queryBussinessRequest";
 
 interface BusinessRow {
   id: string;
@@ -53,7 +56,6 @@ export default function BusinessPage() {
       const response = await getBusinesses();
       const businesses = response.data;
 
-
       // map businesses to BusinessRow
       const mappedRows: BusinessRow[] = businesses.map((dept) => ({
         id: dept.id,
@@ -78,9 +80,7 @@ export default function BusinessPage() {
   }, []);
 
   // get ward options in filters
-  const [filters, setFilters] = useState<Record<string, string>>({
-
-  });
+  const [filters, setFilters] = useState<Record<string, string>>({});
   const wardOptions = useMemo(
     () => getWardOptions(filters["district"], districtOptions, wardsData),
     [filters["district"]]
@@ -283,6 +283,11 @@ export default function BusinessPage() {
         onAddNewClick={handleDisplayCreationPage}
         onUploadClick={() => {}}
         onExportClick={() => {}}
+        title="Danh Sách Doanh Nghiệp"
+        creationPermission={true}
+        hasImport={true}
+        hasExport={true}
+        hasAddNew={true}
       />
 
       <CustomizedDataGrid
@@ -293,11 +298,8 @@ export default function BusinessPage() {
         onView={handleView}
         onEdit={handleDisplayUpdatePage}
         onDelete={handleDelete}
-        // handle change filter conditions
         onFilterChange={handleFilterChange}
         filters={filters}
-        // handle apply filters
-        onFilter={applyFilters}
       />
 
       {/* Alert */}

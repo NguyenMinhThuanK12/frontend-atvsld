@@ -1,5 +1,5 @@
-import { CreationBusinessRequest } from "@/libs/shared/atvsld/dto/request/creationBussinessRequest";
-import { UpdateBusinessRequest } from "@/libs/shared/atvsld/dto/request/updateBusinessRequest";
+import { CreationBusinessRequest } from "@/libs/shared/atvsld/dto/request/business/creationBussinessRequest";
+import { UpdateBusinessRequest } from "@/libs/shared/atvsld/dto/request/business/updateBusinessRequest";
 import { Business } from "@/libs/shared/atvsld/models/business.model";
 import { BusinessType } from "@/libs/shared/core/enums/businessType";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -32,7 +32,10 @@ import LicenseTable from "./LicenseTable";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 import { isValid, parse } from "date-fns";
 import { debounce } from "lodash";
-import { checkDuplicateEmail, checkTaxCodeExists } from "../../services/api/businessApi";
+import {
+  checkDuplicateEmail,
+  checkTaxCodeExists,
+} from "../../services/api/businessApi";
 
 interface InputFormProps {
   formData: Business | null;

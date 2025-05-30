@@ -32,13 +32,16 @@ interface CustomDataGridProps<T> {
   onRowSelectionChange: (selectedRows: T[]) => void;
   pageSizeOptions?: number[];
   initialPageSize?: number;
-  onStatusChange: (rowId: string, newStatus: boolean) => void;
-  onView: (row: T) => void;
-  onEdit: (row: T) => void;
-  onDelete: (rows: T[]) => void;
+  onStatusChange?: (rowId: string, newStatus: boolean) => void;
+  onView?: (row: T) => void;
+  onEdit?: (row: T) => void;
+  onDelete?: (rows: T[]) => void;
   onFilterChange: (field: string, value: string) => void;
   filters: Record<string, string>;
-  onFilter?: (filters: Record<string, string>) => void;
+  hasStatus?: boolean;
+  hasView?: boolean;
+  hasEdit?: boolean;
+  hasDelete?: boolean;
 }
 
 export default function CustomizedDataGrid<
@@ -51,11 +54,14 @@ export default function CustomizedDataGrid<
   onView,
   onEdit,
   onDelete,
-  onFilterChange, 
+  onFilterChange,
   filters = {},
-  onFilter,
   pageSizeOptions = [5, 10, 15, 20],
   initialPageSize = 5,
+  hasStatus = true,
+  hasView = true,
+  hasEdit = true,
+  hasDelete = true,
 }: CustomDataGridProps<T>) {
   const [selectedRows, setSelectedRows] = useState<T[]>([]);
   const [isDeleted, setIsDeleted] = useState(false);
@@ -80,27 +86,6 @@ export default function CustomizedDataGrid<
     },
   };
 
-  const handleApplyFilter = (field: string, value: string) => {
-    if (value === "Tất cả") {
-      const updatedFilters = { ...filters };
-      delete updatedFilters[field];
-      if (onFilter) {
-        onFilter(updatedFilters);
-      }
-    } else {
-      if (onFilter) {
-        onFilter({ ...filters, [field]: value });
-      }
-    }
-    if (onFilterChange) {
-      onFilterChange(field, value);
-    }
-  };
-
-  const [selectedOption, setSelectedOption] = useState(
-    
-  );
-
   const columns: GridColDef[] = [
     ...columnsConfig.map((col) => ({
       field: col.field,
@@ -109,7 +94,7 @@ export default function CustomizedDataGrid<
       minWidth: col.minWidth ?? 120,
       editable: false,
       renderHeader: () => (
-        <div className="flex flex-col gap-2 w-40" style={{ padding: "8px" }}>
+        <div className="flex flex-col gap-2 w-full" style={{ padding: "8px" }}>
           <span className="text-[#637381] font-bold text-sm w-full">
             {col.headerName}
           </span>
@@ -157,74 +142,92 @@ export default function CustomizedDataGrid<
         </div>
       ),
     })),
-    {
-      field: "status",
-      headerName: "Trạng Thái",
-      flex: 0.3,
-      minWidth: 100,
-      editable: false,
-      headerAlign: "left",
-      renderHeader: () => (
-        <div className="flex flex-col gap-2 w-full" style={{ padding: "8px" }}>
-          <span className="text-[#637381] font-bold w-full mb-[2.75rem] text-sm">
-            Trạng Thái
-          </span>
-        </div>
-      ),
-      renderCell: (params) => (
-        <div className="flex items-center justify-center w-full">
-          <FormControlLabel
-            control={
-              <Switch
-                checked={params.row.isActive ?? false}
-                onChange={() =>
-                  onOpenStatusDialog(
-                    params.row.id,
-                    params.row.isActive ?? false
-                  )
-                }
-                name="status"
-              />
-            }
-            label=""
-            sx={{ margin: 0 }}
-          />
-        </div>
-      ),
-    },
-    {
-      field: "action",
-      headerName: "Thao tác",
-      type: "actions",
-      flex: 0.3,
-      minWidth: 90,
-      editable: false,
-      renderHeader: () => (
-        <div className="flex flex-col gap-2 w-full" style={{ padding: "8px" }}>
-          <span className="text-[#637381] font-bold w-full  mb-[2.75rem] text-sm">
-            Thao tác
-          </span>
-        </div>
-      ),
-      renderCell: (params) => (
-        <div className="flex w-full gap-2 items-center justify-center">
-          <button
-            onClick={() => onView?.(params.row)}
-            title="Xem chi tiết"
-            aria-label="Xem chi tiết"
-          >
-            <Eye size={20} />
-          </button>
-          <button
-            onClick={() => onEdit?.(params.row)}
-            title="Chỉnh sửa"
-            aria-label="Chỉnh sửa"
-          >
-            <Pencil size={20} />
-          </button>
-        </div>
-      ),
-    },
+    ...(hasStatus
+      ? [
+          {
+            field: "status",
+            headerName: "Trạng Thái",
+            flex: 0.3,
+            minWidth: 100,
+            editable: false,
+            headerAlign: "left",
+            renderHeader: () => (
+              <div
+                className="flex flex-col gap-2 w-full"
+                style={{ padding: "8px" }}
+              >
+                <span className="text-[#637381] font-bold w-full mb-[2.75rem] text-sm">
+                  Trạng Thái
+                </span>
+              </div>
+            ),
+            renderCell: (params) => (
+              <div className="flex items-center justify-center w-full">
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={params.row.isActive ?? false}
+                      onChange={() =>
+                        onOpenStatusDialog(
+                          params.row.id,
+                          params.row.isActive ?? false
+                        )
+                      }
+                      name="status"
+                    />
+                  }
+                  label=""
+                  sx={{ margin: 0 }}
+                />
+              </div>
+            ),
+          } as GridColDef,
+        ]
+      : []),
+    ...(hasView || hasEdit
+      ? [
+          {
+            field: "action",
+            headerName: "Thao tác",
+            type: "actions",
+            flex: 0.3,
+            minWidth: 90,
+            editable: false,
+            renderHeader: () => (
+              <div
+                className="flex flex-col gap-2 w-full"
+                style={{ padding: "8px" }}
+              >
+                <span className="text-[#637381] font-bold w-full mb-[2.75rem] text-sm flex items-center justify-center">
+                  Thao tác
+                </span>
+              </div>
+            ),
+            renderCell: (params) => (
+              <div className="flex w-full gap-2 items-center justify-center">
+                {hasView && (
+                  <button
+                    onClick={() => onView?.(params.row)}
+                    title="Xem chi tiết"
+                    aria-label="Xem chi tiết"
+                  >
+                    <Eye size={20} />
+                  </button>
+                )}
+                {hasEdit && (
+                  <button
+                    onClick={() => onEdit?.(params.row)}
+                    title="Chỉnh sửa"
+                    aria-label="Chỉnh sửa"
+                  >
+                    <Pencil size={20} />
+                  </button>
+                )}
+              </div>
+            ),
+          } as GridColDef,
+        ]
+      : []),
   ];
 
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -316,6 +319,9 @@ export default function CustomizedDataGrid<
           },
           "& .MuiDataGrid-cell:not(.MuiDataGrid-cellCheckbox)": {
             paddingLeft: "18px",
+          },
+          "& .MuiDataGrid-columnHeaderTitleContainerContent": {
+            width: "100%",
           },
         }}
       >

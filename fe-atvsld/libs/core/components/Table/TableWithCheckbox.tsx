@@ -1,8 +1,8 @@
 "use client";
 
-import { toRomanNumeral } from "@/libs/atvsld/utils/commonFunction";
 import {
   Box,
+  Checkbox,
   Collapse,
   IconButton,
   Paper,
@@ -10,6 +10,7 @@ import {
   TableBody,
   TableCell,
   TableContainer,
+  TableFooter,
   TableHead,
   TablePagination,
   TableRow,
@@ -19,34 +20,56 @@ import {
 import { ChevronDown, ChevronUp } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
-interface CustomizedTableProps {
-  rows: GroupPermissionRow[];
-  onFilterChange: (field: string, value: string) => void;
-  filters: Record<string, string>;
+function createData(
+  perCode: string,
+  perName: string
+) {
+  return {
+    perCode,
+    perName,
+    functions: [
+      {
+        numOrder: 1,
+        type: "Component",
+        funcCode: "FUNC001",
+        funcName: "Thêm mới",
+      },
+      {
+        numOrder: 2,
+        type: "Component",
+        funcCode: "FUNC002",
+        funcName: "Cập nhật",
+      },
+      {
+        numOrder: 3,
+        type: "Component",
+        funcCode: "FUNC003",
+        funcName: "Xoá",
+      },
+      {
+        numOrder: 4,
+        type: "Component",
+        funcCode: "FUNC004",
+        funcName: "Xem chi tiết",
+      },
+    ],
+  };
 }
 
-interface ComponentPermissionRow {
+type FunctionType = {
   numOrder: number;
   type: string;
   funcCode: string;
   funcName: string;
-}
+};
 
-interface GroupPermissionRow {
-  numOrder: number;
-  type: string;
-  perCode: string;
-  perName: string;
-  components: ComponentPermissionRow[];
-}
-
-function Row(props: { row: GroupPermissionRow }) {
+function Row(props: { row: ReturnType<typeof createData> }) {
   const { row } = props;
   const [open, setOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   // Ensure the component only renders dynamically after mounting
-  useEffect(() => {
+ useEffect(() => {
     setIsMounted(true);
   }, []);
 
@@ -54,47 +77,49 @@ function Row(props: { row: GroupPermissionRow }) {
     <>
       <TableRow>
         <TableCell
-          style={{
-            width: "50px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
         >
           <IconButton
+            // className="h-full w-full"
             aria-label="expand row"
-            size="medium"
+            size="small"
             onClick={() => setOpen(!open)}
+            sx={{
+              padding: "6px",
+            }}
           >
             {open ? <ChevronUp /> : <ChevronDown />}
           </IconButton>
         </TableCell>
-        <TableCell style={{ width: "100px" }}>{toRomanNumeral(row.numOrder)}</TableCell>
-        <TableCell style={{ width: "200px" }}>{row.type}</TableCell>
-        <TableCell>{row.perCode}</TableCell>
+        <TableCell
+          style={{
+            width: "100%",
+            // borderBottom: "1px solid red",
+          }}
+        >
+          <Checkbox color="primary" checked={false} onChange={() => {}} />
+        </TableCell>
+        <TableCell style={{ borderTop: "1px solid green" }}>
+          {row.perCode}
+        </TableCell>
         <TableCell>{row.perName}</TableCell>
       </TableRow>
       <TableRow>
-        <TableCell style={{ padding: "0px" }} colSpan={5}>
+        <TableCell style={{ padding: "0px" }} colSpan={4}>
           {isMounted && (
             <Collapse in={open} timeout="auto" unmountOnExit>
               <Table style={{ tableLayout: "fixed", width: "100%" }}>
                 <TableBody>
-                  {row.components.map((func, index) => (
+                  {(row.functions as FunctionType[]).map((func, index) => (
                     <TableRow key={index}>
-                      <TableCell style={{ width: "50px" }}></TableCell>
+                      <TableCell style={{ width: "100px" }}></TableCell>
                       <TableCell
-                        style={{
-                          width: "100px",
-                          paddingLeft: "2.5rem",
-                        }}
+                        style={{ width: "100px", paddingLeft: "1rem" }}
                       >
-                        {func.numOrder}
-                      </TableCell>
-                      <TableCell
-                        style={{ paddingLeft: "2.5rem", width: "200px" }}
-                      >
-                        {func.type}
+                        <Checkbox
+                          color="primary"
+                          checked={false}
+                          onChange={() => {}}
+                        />
                       </TableCell>
                       <TableCell style={{ paddingLeft: "3rem" }}>
                         {func.funcCode}
@@ -114,7 +139,13 @@ function Row(props: { row: GroupPermissionRow }) {
   );
 }
 
-export default function CustomizedTable({ rows, onFilterChange, filters }: CustomizedTableProps) {
+const rows = [
+  createData( "PER001", "Nhóm doanh nghiệp"),
+  createData("PER002", "Nhóm người dùng"),
+  createData("PER003", "Nhóm quyền"),
+];
+
+export default function CustomizedTable() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -129,13 +160,9 @@ export default function CustomizedTable({ rows, onFilterChange, filters }: Custo
     setPage(0);
   };
 
-  useEffect(() => {
-    console.log("Filters changed:", filters); // can not log
-    console.log("Rows length:", rows.length); // can not log
-  }, [filters, rows]);
 
   return (
-    <Box className="w-full h-[calc(100vh-100px)] rounded-lg shadow-lg bg-white flex flex-col items-end justify-between">
+    <Box className="w-full h-full rounded-lg shadow-lg bg-white flex flex-col items-end justify-between">
       <TableContainer
         component={Paper}
         sx={{
@@ -149,49 +176,25 @@ export default function CustomizedTable({ rows, onFilterChange, filters }: Custo
                 "&:last-child td, &:last-child th": { borderBottom: "none" },
               }}
             >
-              <TableCell style={{ width: "50px" }} />
-              <TableCell style={{ width: "100px", color: "black" }}>
-                STT
-              </TableCell>
-              <TableCell style={{ width: "200px", color: "black" }}>
-                Loại
-              </TableCell>
+              <TableCell style={{ width: "100px" }} />
+              <TableCell style={{ width: "100px" }} />
               <TableCell style={{ color: "black" }}>Mã quyền</TableCell>
               <TableCell style={{ color: "black" }}>Tên quyền</TableCell>
             </TableRow>
             <TableRow>
-              <TableCell style={{ width: "50px" }}></TableCell>
-              <TableCell style={{ width: "100px", padding: "4px" }}></TableCell>
+              <TableCell style={{ width: "50px" }} />
+              <TableCell style={{ width: "50px" }} />
               <TableCell>
                 <TextField
                   variant="outlined"
                   size="small"
                   fullWidth
-                  disabled
-                  sx={{
-                    "& .MuiInputBase-root": {
-                      borderRadius: "4px",
-                      outline: "none",
-                      border: "none",
-                    },
-                  }}
-                />
-              </TableCell>
-              <TableCell>
-                <TextField
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  value={filters["permissionCode"] || ""}
-                  onChange={(e) =>
-                    onFilterChange("permissionCode", e.target.value)
-                  }
                   sx={{
                     "& .MuiInputBase-root": {
                       backgroundColor: "white",
                       borderRadius: "4px",
                       outline: "none",
-                      border: "none",
+                      // border: "none",
                     },
                   }}
                 />
@@ -201,10 +204,6 @@ export default function CustomizedTable({ rows, onFilterChange, filters }: Custo
                   variant="outlined"
                   size="small"
                   fullWidth
-                  value={filters["permissionName"] || ""}
-                  onChange={(e) =>
-                    onFilterChange("permissionName", e.target.value)
-                  }
                   sx={{
                     "& .MuiInputBase-root": {
                       backgroundColor: "white",
@@ -219,7 +218,7 @@ export default function CustomizedTable({ rows, onFilterChange, filters }: Custo
           </TableHead>
           <TableBody>
             {rows.map((row) => (
-              <Row key={row.numOrder} row={row} />
+              <Row key={row.perCode} row={row} />
             ))}
           </TableBody>
         </Table>

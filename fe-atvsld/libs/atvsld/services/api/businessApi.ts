@@ -1,12 +1,12 @@
 import { Business } from "@/libs/shared/atvsld/models/business.model";
 import api from "../configuration/axiosConfig";
 import { ApiResponse } from "@/libs/shared/atvsld/dto/response/api-response";
-import { CreationBusinessRequest } from "@/libs/shared/atvsld/dto/request/creationBussinessRequest";
-import { UpdateBusinessRequest } from "@/libs/shared/atvsld/dto/request/updateBusinessRequest";
+import { CreationBusinessRequest } from "@/libs/shared/atvsld/dto/request/business/creationBussinessRequest";
+import { UpdateBusinessRequest } from "@/libs/shared/atvsld/dto/request/business/updateBusinessRequest";
 import { format } from "date-fns";
 import { useEffect } from "react";
 import { id } from "date-fns/locale";
-import { QueryBusinessRequest } from "@/libs/shared/atvsld/dto/request/queryBussinessRequest";
+import { QueryBusinessRequest } from "@/libs/shared/atvsld/dto/request/business/queryBussinessRequest";
 
 export const getBusinesses = async (): Promise<
   paginationResponse<Business>
@@ -194,7 +194,7 @@ export const updateBusiness = async (
     }
 
     console.log("Update Response:", response.data);
-    
+
     return response.data;
   } catch (error) {
     console.log("Error during update:", error);
@@ -214,7 +214,7 @@ export const deleteBusiness = async (
   }
 };
 
-export const checkTaxCodeExists = async(
+export const checkTaxCodeExists = async (
   taxCode: string
 ): Promise<ApiResponse<boolean>> => {
   try {
@@ -226,9 +226,9 @@ export const checkTaxCodeExists = async(
   } catch (error) {
     throw error;
   }
-}
+};
 
-export const checkDuplicateEmail = async(
+export const checkDuplicateEmail = async (
   email: string
 ): Promise<ApiResponse<boolean>> => {
   try {
@@ -240,9 +240,9 @@ export const checkDuplicateEmail = async(
   } catch (error) {
     throw error;
   }
-}
+};
 
-export const updateBusinessStatus = async(
+export const updateBusinessStatus = async (
   id: string,
   isActive: boolean
 ): Promise<ApiResponse<Business>> => {
@@ -256,14 +256,14 @@ export const updateBusinessStatus = async(
   } catch (error) {
     throw error;
   }
-}
+};
 
-export const filterBusinesses = async(
+export const filterBusinesses = async (
   query: QueryBusinessRequest
 ): Promise<ApiResponse<paginationResponse<Business>>> => {
   try {
     console.log("Filtering businesses with query:", query);
-    
+
     const response = await api.get<ApiResponse<paginationResponse<Business>>>(
       "/businesses/search",
       { params: query }
@@ -273,5 +273,4 @@ export const filterBusinesses = async(
   } catch (error) {
     throw error;
   }
-}
-
+};
