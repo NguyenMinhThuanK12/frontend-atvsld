@@ -2,9 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import Header from "../../components/Header";
 import CustomizedTable from "@/libs/core/components/Table/CustomizedTable";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
-import { filterPermissions, getComponentPermissionsByGroup, getGroupPermissions } from "../../services/api/permissionApi";
-import { QueryPermissionRequest } from "@/libs/shared/atvsld/dto/request/permission/QueryPermissionRequest";
-import { filter } from "lodash";
+import { getComponentPermissionsByGroup, getGroupPermissions } from "../../services/api/permissionApi";
 
 interface GroupPermissionRow {
   numOrder: number;
@@ -42,7 +40,6 @@ export default function PermissionPage() {
     []
   );
 
-  const [isLoading, setIsLoading] = useState(true);
   const [groupDataRows, setGroupDataRows] = useState<GroupPermissionRow[]>([]);
   const [globalDataRows, setGlobalDataRows] = useState<GroupPermissionRow[]>(
     []
@@ -100,8 +97,6 @@ export default function PermissionPage() {
   }
 
   const loadComponentPermissions = async (groupPermissions: GroupPermissionRow[]) => {
-    console.log("access in this");
-    
     const updatedGroupPermissions = await Promise.all(
       groupPermissions.map(async (group) => {
         const components = await fetchComponentPermissions(group.perCode);
@@ -113,19 +108,16 @@ export default function PermissionPage() {
     );
     setGroupDataRows(updatedGroupPermissions);
     setGlobalDataRows(updatedGroupPermissions); // Store global data for filtering
-    setIsLoading(false);
     console.log("Updated group permissions:", updatedGroupPermissions);
     
     showAlert("Tải dữ liệu quyền thành công", "success");
   }
 
   const fetchData = async () => {
-    setIsLoading(true);
     const groupPermissions = await fetchGroupPermissions();
     if (groupPermissions) {
       await loadComponentPermissions(groupPermissions);
     } else {
-      setIsLoading(false);
       showAlert("Không có dữ liệu quyền nhóm", "warning");
       return;
     }
@@ -135,7 +127,6 @@ export default function PermissionPage() {
   useEffect(() => {
     console.log("Running useEffect for data fetch");
     if (globalDataRows.length > 0 || groupDataRows.length > 0) {
-      setIsLoading(false);
       return; // Avoid refetching
     }
     fetchData();
@@ -159,18 +150,6 @@ export default function PermissionPage() {
   };
 
   const applyFilters = (localFilters: Record<string, string>) => {
-    if (isLoading) {
-      console.log("Skipping applyFilters: data is still loading");
-      return; // Wait for data to load
-    }
-    console.log("Applying local filters with current state:", localFilters);
-    console.log("permissionCode:", localFilters["permissionCode"]);
-    console.log("permissionName:", localFilters["permissionName"]);
-
-    console.log("Global data rows:", globalDataRows); // empty
-    console.log("groupDataRows before filtering:", groupDataRows); // empty
-    
-    
     
     const filteredRows = globalDataRows.filter((row) => {
       // filter on local data
@@ -192,11 +171,11 @@ export default function PermissionPage() {
     setTimeout(() => { 
       if (
         filteredRows.length === 0 &&
-        (filters.permissionCode || filters.permissionName)
+        (localFilters.permissionCode || localFilters.permissionName)
       ) {
         showAlert("Không tìm thấy quyền phù hợp với điều kiện lọc.", "warning");
       }
-    }, 1000)
+    }, 500)
   };
 
   return (

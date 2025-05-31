@@ -1,7 +1,7 @@
 import { ApiResponse } from "@/libs/shared/atvsld/dto/response/api-response";
 import api from "../configuration/axiosConfig";
 import { PermissionResponse } from "@/libs/shared/atvsld/dto/response/permission/PermissionResponse";
-import { QueryPermissionRequest } from "@/libs/shared/atvsld/dto/request/permission/QueryPermissionRequest";
+import { QueryPermissionRequest } from "@/libs/shared/atvsld/dto/request/permission/queryPermissionRequest";
 
 export const getGroupPermissions = async (): Promise<
   paginationResponse<PermissionResponse>

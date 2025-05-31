@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { ThemeProvider } from "@mui/material/styles";
-import theme from "@/libs/atvsld/providers/theme/theme";
-import Sidebar from "@/libs/atvsld/components/Sidebar";
+import { Inter } from "next/font/google";
 
 export const metadata: Metadata = {
   title: "An toàn vệ sinh lao động",
@@ -12,6 +10,8 @@ export const metadata: Metadata = {
   }
 };
 
+const inter = Inter({ subsets: ["latin"] });
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -19,9 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className=" ">
-        {children}
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }

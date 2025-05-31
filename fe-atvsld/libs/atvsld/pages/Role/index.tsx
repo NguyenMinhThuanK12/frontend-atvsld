@@ -5,8 +5,11 @@ import Header from "../../components/Header";
 import CustomizedDataGrid, {
   ColumnConfig,
 } from "@/libs/core/components/Table/CustomizedDataGrid";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
+import { deleteRole, filterRoles, getRoles } from "../../services/api/roleApi";
+import { QueryBusinessRequest } from "@/libs/shared/atvsld/dto/request/business/queryBussinessRequest";
+import { QueryRoleRequest } from "@/libs/shared/atvsld/dto/request/role/queryRoleRequest";
 
 interface RoleRow {
   id: string;
@@ -15,6 +18,23 @@ interface RoleRow {
 }
 
 export default function RolePage() {
+  const query = useSearchParams();
+
+  useEffect(() => {
+    const createSuccess = query.get("create");
+    if (createSuccess) {
+      showAlert("Tạo mới vai trò thành công", "success");
+    }
+  }, [])
+
+  useEffect(() => {
+    const updateSuccess = query.get("update");
+    if (updateSuccess) {
+      showAlert("Cập nhật vai trò thành công", "success");
+    }
+  }
+    , []);
+  
   // notify
   const [alert, setAlert] = useState<{
     content: string;
@@ -34,41 +54,83 @@ export default function RolePage() {
     []
   );
 
-  // fetch roles
-  const [dataRows, setDataRows] = React.useState<any[]>([]);
+  const [dataRows, setDataRows] = React.useState<RoleRow[]>([]);
 
-  const rows: RoleRow[] = [
-    {
-      id: "1",
-      roleCode: "ADMIN",
-      roleName: "Quản trị viên",
-    },
-    {
-      id: "2",
-      roleCode: "USER",
-      roleName: "Người dùng",
-    },
-    {
-      id: "3",
-      roleCode: "GUEST",
-      roleName: "Khách",
-    },
-    ];
-    
-  // Simulate fetching data
+  // fetch data
+  const fetchData = async () => {
+    try {
+      const response = await getRoles();
+
+      if (!response.data) {
+        throw new Error("No roles found");
+      }
+
+      const formattedRows: RoleRow[] = response.data.map((role) => ({
+        id: role.id,
+        roleCode: role.code,
+        roleName: role.name,
+      }));
+
+      setDataRows(formattedRows);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      showAlert("Lỗi khi tải dữ liệu", "error");
+      
+    }
+  }
+
   useEffect(() => {
-    // Simulate an API call
-    setTimeout(() => {
-      setDataRows(rows);
-    }, 1000);
+    fetchData();
   }, []);
-    
-    
+
   // filters
   const [filters, setFilters] = useState<Record<string, string>>({});
-  const handleFilterChange = useCallback((field: string, value: string) => {
+  const handleFilterChange = (field: string, value: string) => {
     console.log("Filter change: field:", field, " - value:", value);
-  }, []);
+    setFilters((prevFilters) => {
+      const newFilters = { ...prevFilters, [field]: value };
+      if (value === "") {
+        delete newFilters[field];
+      }
+      
+      const query: QueryRoleRequest = {
+        code: newFilters["roleCode"],
+        name: newFilters["roleName"],
+      };
+      
+      applyFilters(query);
+
+      return newFilters;
+    });
+  };
+
+  const applyFilters = async (query: QueryRoleRequest) => {
+    try {
+      const response = await filterRoles(query);
+      if(response.status != 200  || !response.data) {
+        showAlert(response.message, "warning");
+        return;
+      }
+
+      if (!response.data.data || response.data.data.length === 0) {
+        showAlert("Không có dữ liệu phù hợp", "info");
+        setDataRows([]);
+        return;
+      }
+
+      const formattedRows: RoleRow[] = response.data.data.map((role) => ({
+        id: role.id,
+        roleCode: role.code,
+        roleName: role.name,
+      }));
+
+      setDataRows(formattedRows);
+    } catch (error) {
+      console.error("Error applying filters:", error);
+      showAlert("Lỗi khi áp dụng bộ lọc", "error");
+      
+    }
+  }
 
   const ColumnConfig: ColumnConfig[] = [
     {
@@ -96,12 +158,37 @@ export default function RolePage() {
   const router = useRouter();
 
   const handleDisplayUpdatePage = useCallback((row: RoleRow) => {
-    router.push(`/dashboard/roles/update?${row.id}`);
+    router.push(`/dashboard/roles/update?id=${row.id}`);
   }, []);
 
   const handleDisplayCreatePage = useCallback(() => {
     router.push("/dashboard/roles/create");
   }, []);
+
+  // handle delete
+  const handleDelete = async () => {
+      try {
+        await Promise.all(
+          selectedRows.map(async (row) => {
+            const response = await deleteRole(row.id);
+            if (response.status !== 200) {
+              showAlert(`Không thể xóa đơn vị với ID: ${row.id}`, "error");
+              throw new Error(`Failed to delete department with ID: ${row.id}`);
+            }
+          })
+        );
+  
+        showAlert("Xóa doanh nghiệp thành công.", "success");
+  
+        setDataRows((prevRows) =>
+          prevRows.filter((r) => !selectedRows.some((sr) => sr.id === r.id))
+        );
+        setSelectedRows([]);
+      } catch (error) {
+        console.error("Error deleting departments:", error);
+        showAlert("Có lỗi xảy ra khi xóa đơn vị.", "error");
+      }
+    };
 
   return (
     <div className="container w-full flex flex-col items-center justify-between h-full">
@@ -112,17 +199,20 @@ export default function RolePage() {
         onAddNewClick={handleDisplayCreatePage}
       />
 
-      <CustomizedDataGrid
-        rows={dataRows}
-        columnsConfig={ColumnConfig}
-        onRowSelectionChange={handleRowSelection}
-        onFilterChange={handleFilterChange}
-        filters={filters}
-        onEdit={handleDisplayUpdatePage}
-        hasStatus={false}
-        hasView={false}
-      />
-      {/* <div className="flex-1 overflow-y-auto w-full px-2"></div> */}
+      <div className="flex w-full h-full justify-between items-center px-2 pb-4">
+        <CustomizedDataGrid
+          rows={dataRows}
+          columnsConfig={ColumnConfig}
+          onRowSelectionChange={handleRowSelection}
+          onFilterChange={handleFilterChange}
+          filters={filters}
+          onEdit={handleDisplayUpdatePage}
+          hasStatus={false}
+          hasView={false}
+          onDelete={handleDelete}
+        />
+      </div>
+
 
       {/* Alert */}
       {alert && (

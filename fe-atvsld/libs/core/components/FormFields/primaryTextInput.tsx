@@ -10,7 +10,9 @@ interface PrimaryTextFieldProps {
   placeholder?: string;
   required?: boolean;
   error?: boolean;
+  helperText?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 const PrimaryTextField: React.FC<PrimaryTextFieldProps> = ({
@@ -20,7 +22,9 @@ const PrimaryTextField: React.FC<PrimaryTextFieldProps> = ({
   placeholder,
   required = false,
   error = false,
+  helperText = "",
   className = "",
+  disabled = false,
 }) => {
   return (
     <TextField
@@ -32,6 +36,9 @@ const PrimaryTextField: React.FC<PrimaryTextFieldProps> = ({
       value={value}
       onChange={onChange}
       placeholder={placeholder}
+      error={error}
+      helperText={helperText}
+      disabled={disabled}
       sx={{
         marginBottom: "1.5rem",
         "& .MuiOutlinedInput-root": {

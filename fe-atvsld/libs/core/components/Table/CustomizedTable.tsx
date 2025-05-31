@@ -129,10 +129,6 @@ export default function CustomizedTable({ rows, onFilterChange, filters }: Custo
     setPage(0);
   };
 
-  useEffect(() => {
-    console.log("Filters changed:", filters); // can not log
-    console.log("Rows length:", rows.length); // can not log
-  }, [filters, rows]);
 
   return (
     <Box className="w-full h-[calc(100vh-100px)] rounded-lg shadow-lg bg-white flex flex-col items-end justify-between">
