@@ -1,30 +1,18 @@
+import { UserResponse } from "@/libs/shared/atvsld/dto/response/user/UserReponse";
 import api from "../configuration/axiosConfig";
+import { ApiResponse } from "@/libs/shared/atvsld/dto/response/api-response";
 
-interface UserResponse {
-  id: string;
-  username: string;
-  fullName: string;
-  password: string;
-  email: string;
-  phone: string;
-  dob: string;
-  jobTitle: string;
-  active: boolean;
-}
-
-interface ApiResponse<T> {
-  code: number;
-  message: string;
-  result: T;
-}
-
-export const getUsers = async (): Promise<UserResponse[]> => {
+export const getUsers = async (): Promise<paginationResponse<UserResponse>> => {
   try {
-    const response = await api.get<ApiResponse<UserResponse[]>>("/api/v1/users");
-    console.log("API Response:", response.data); 
-    return response.data.result;
-  } catch (error: any) {
-    console.error("API Error:", error.message);
+    const response = await api.get<ApiResponse<paginationResponse<UserResponse>>>("/users");
+    if (!response.data || !response.data.data) {
+      throw new Error("No data found in the response");
+    }
+    
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching users:", error);
     throw error;
+    
   }
-};
+}

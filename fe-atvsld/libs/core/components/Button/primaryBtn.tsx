@@ -37,7 +37,7 @@ const PrimaryButton: React.FC<PrimaryBtnProps> = ({
       className={className}
       sx={{
         textTransform: "none",
-        borderRadius: "10px",
+        borderRadius: "8px",
         backgroundColor: "#2962FF",
         ":hover": {
           opacity: 0.8,

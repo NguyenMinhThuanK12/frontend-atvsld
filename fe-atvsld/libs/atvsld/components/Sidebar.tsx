@@ -43,7 +43,7 @@ const Sidebar: React.FC = () => {
       { name: "Quản lý doanh nghiệp", href: "/dashboard/businesses" },
       { name: "Phân quyền", href: "/dashboard/permissions" },
       { name: "Vai trò", href: "/dashboard/roles" },
-      { name: "Tài khoản", href: "/dashboard/users" },
+      { name: "Người dùng", href: "/dashboard/users" },
       { name: "Báo cáo ATVSLĐ", href: "/dashboard/reports" },
     ],
     []

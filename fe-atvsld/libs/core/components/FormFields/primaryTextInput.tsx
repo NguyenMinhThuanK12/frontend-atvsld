@@ -28,6 +28,7 @@ const PrimaryTextField: React.FC<PrimaryTextFieldProps> = ({
 }) => {
   return (
     <TextField
+      size="small"
       className={className}
       required={required}
       label={label}

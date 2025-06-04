@@ -8,7 +8,6 @@ import CustomizedDataGrid, {
 import { useRouter, useSearchParams } from "next/navigation";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 import { deleteRole, filterRoles, getRoles } from "../../services/api/roleApi";
-import { QueryBusinessRequest } from "@/libs/shared/atvsld/dto/request/business/queryBussinessRequest";
 import { QueryRoleRequest } from "@/libs/shared/atvsld/dto/request/role/queryRoleRequest";
 
 interface RoleRow {

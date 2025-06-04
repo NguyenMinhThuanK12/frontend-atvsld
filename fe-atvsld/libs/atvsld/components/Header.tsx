@@ -26,7 +26,7 @@ export default function Header({
   creationPermission,
   hasImport = false,
   hasExport = false,
-  hasAddNew = false,
+  hasAddNew = true,
 }: HeaderProps) {
   return (
     <header className="h-16 left-80 ml-2 fixed top-2 right-2 z-40 bg-white flex items-center justify-between px-4 shadow-lg rounded-lg">

@@ -16,7 +16,7 @@ export default function SelectedItemForDeleting<T>({
   return (
     <div
       className="container w-86 h-10 mx-auto flex items-center justify-between bg-white shadow-lg rounded-md
-    transition-all duration-300 ease-in-out opacity-100 translate-y-0 animate-fade-in mb-4"
+    transition-all duration-300 ease-in-out opacity-100 translate-y-0 animate-fade-in mb-4 z-50"
     >
       <div className="w-10 h-full bg-primary rounded-md flex items-center justify-center">
         <h5 className="text-white font-bold text-sm">{selectedRowsQuantity}</h5>

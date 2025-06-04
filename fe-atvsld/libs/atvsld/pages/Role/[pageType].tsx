@@ -63,9 +63,6 @@ export const RoleDetail: NextPage = () => {
 
   useEffect(() => {
     if (isView || isUpdate) {
-      // Fetch role details by id
-      console.log("Fetching role details for ID:", id);
-      
       getDetail(id);
     }
   }, [id]);

@@ -282,7 +282,7 @@ export default function CustomizedDataGrid<
     <div className="container w-full flex flex-col items-center justify-between h-full mt-5">
       <Box
         sx={{
-          height: 500,
+          height: "calc(100vh - 180px)",
           width: "100%",
           "& .MuiDataGrid-cell": {
             padding: "14px 0px",
