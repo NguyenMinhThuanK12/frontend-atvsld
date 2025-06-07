@@ -33,9 +33,11 @@ export const getBusinessById = async (
 ): Promise<ApiResponse<Business>> => {
   try {
     console.log("Fetching business by ID:", id);
-
+    if (!id) {
+      throw new Error("ID không được cung cấp");
+    }
     const response = await api.get<ApiResponse<Business>>(`/businesses/${id}`);
-    console.log("API Response:", response.data);
+    console.log("API Response by ID:", response.data);
 
     if (!response.data || !response.data.data) {
       throw new Error("Không tìm thấy doanh nghiệp với ID: " + id);

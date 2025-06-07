@@ -5,10 +5,12 @@ import Header from "../../components/Header";
 import CustomizedDataGrid, {
   ColumnConfig,
 } from "@/libs/core/components/Table/CustomizedDataGrid";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 import { deleteRole, filterRoles, getRoles } from "../../services/api/roleApi";
 import { QueryRoleRequest } from "@/libs/shared/atvsld/dto/request/role/queryRoleRequest";
+import { Role } from "@/libs/shared/atvsld/models/role.model";
+import RoleDetail from "./popup/role-detail";
 
 interface RoleRow {
   id: string;
@@ -24,16 +26,15 @@ export default function RolePage() {
     if (createSuccess) {
       showAlert("Tạo mới vai trò thành công", "success");
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     const updateSuccess = query.get("update");
     if (updateSuccess) {
       showAlert("Cập nhật vai trò thành công", "success");
     }
-  }
-    , []);
-  
+  }, []);
+
   // notify
   const [alert, setAlert] = useState<{
     content: string;
@@ -53,7 +54,10 @@ export default function RolePage() {
     []
   );
 
+  const [openModal, setOpenModal] = useState<boolean>(false);
+  const [id, setId] = useState<string>("");
   const [dataRows, setDataRows] = React.useState<RoleRow[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
 
   // fetch data
   const fetchData = async () => {
@@ -71,15 +75,16 @@ export default function RolePage() {
       }));
 
       setDataRows(formattedRows);
+      setRoles(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
       showAlert("Lỗi khi tải dữ liệu", "error");
-      
     }
-  }
+  };
 
   useEffect(() => {
     fetchData();
+    console.log("avalable roles:", roles);
   }, []);
 
   // filters
@@ -91,12 +96,12 @@ export default function RolePage() {
       if (value === "") {
         delete newFilters[field];
       }
-      
+
       const query: QueryRoleRequest = {
         code: newFilters["roleCode"],
         name: newFilters["roleName"],
       };
-      
+
       applyFilters(query);
 
       return newFilters;
@@ -106,7 +111,7 @@ export default function RolePage() {
   const applyFilters = async (query: QueryRoleRequest) => {
     try {
       const response = await filterRoles(query);
-      if(response.status != 200  || !response.data) {
+      if (response.status != 200 || !response.data) {
         showAlert(response.message, "warning");
         return;
       }
@@ -127,9 +132,8 @@ export default function RolePage() {
     } catch (error) {
       console.error("Error applying filters:", error);
       showAlert("Lỗi khi áp dụng bộ lọc", "error");
-      
     }
-  }
+  };
 
   const ColumnConfig: ColumnConfig[] = [
     {
@@ -154,40 +158,41 @@ export default function RolePage() {
     console.log("Selected rows:", selectedData);
   }, []);
 
-  const router = useRouter();
 
   const handleDisplayUpdatePage = useCallback((row: RoleRow) => {
-    router.push(`/dashboard/roles/update?id=${row.id}`);
+    setId(row.id);
+    setOpenModal(true);
   }, []);
 
   const handleDisplayCreatePage = useCallback(() => {
-    router.push("/dashboard/roles/create");
+    setOpenModal(true);
+    setId("");
   }, []);
 
   // handle delete
   const handleDelete = async () => {
-      try {
-        await Promise.all(
-          selectedRows.map(async (row) => {
-            const response = await deleteRole(row.id);
-            if (response.status !== 200) {
-              showAlert(`Không thể xóa đơn vị với ID: ${row.id}`, "error");
-              throw new Error(`Failed to delete department with ID: ${row.id}`);
-            }
-          })
-        );
-  
-        showAlert("Xóa doanh nghiệp thành công.", "success");
-  
-        setDataRows((prevRows) =>
-          prevRows.filter((r) => !selectedRows.some((sr) => sr.id === r.id))
-        );
-        setSelectedRows([]);
-      } catch (error) {
-        console.error("Error deleting departments:", error);
-        showAlert("Có lỗi xảy ra khi xóa đơn vị.", "error");
-      }
-    };
+    try {
+      await Promise.all(
+        selectedRows.map(async (row) => {
+          const response = await deleteRole(row.id);
+          if (response.status !== 200) {
+            showAlert(`Không thể xóa đơn vị với ID: ${row.id}`, "error");
+            throw new Error(`Failed to delete department with ID: ${row.id}`);
+          }
+        })
+      );
+
+      showAlert("Xóa doanh nghiệp thành công.", "success");
+
+      setDataRows((prevRows) =>
+        prevRows.filter((r) => !selectedRows.some((sr) => sr.id === r.id))
+      );
+      setSelectedRows([]);
+    } catch (error) {
+      console.error("Error deleting departments:", error);
+      showAlert("Có lỗi xảy ra khi xóa đơn vị.", "error");
+    }
+  };
 
   return (
     <div className="container w-full flex flex-col items-center justify-between h-full">
@@ -212,6 +217,15 @@ export default function RolePage() {
         />
       </div>
 
+      {/* Role Detail Popup */}
+      <RoleDetail
+        openModal={openModal}
+        idSelected={id}
+        onClose={() => {
+          setOpenModal(false);
+          setId("");
+        }}
+      />
 
       {/* Alert */}
       {alert && (

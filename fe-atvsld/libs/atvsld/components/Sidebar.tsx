@@ -7,14 +7,12 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Cookies from "js-cookie";
 import SidebarItem from "./SidebarItem";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
-import { useErrorBoundary } from "react-error-boundary";
 import { logout } from "@/libs/atvsld/services/api/authApi";
-import { log } from "console";
-import { set } from "lodash";
+import { useAuth } from "../services/context/AuthContext";
+import { permission } from "process";
 
 const Sidebar: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isSystemOpen, setIsSystemOpen] = useState(false);
+  const [isSystemOpen, setIsSystemOpen] = useState(true);
   const [username, setUsername] = useState("");
   const [alert, setAlert] = useState<{
     content: string;
@@ -22,8 +20,42 @@ const Sidebar: React.FC = () => {
   } | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [selectedItem, setSelectedItem] = useState<string|null>(null)
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const pathName = usePathname();
+
+  const AuthContextType = useAuth();
+  const permissions = AuthContextType.permissions;
+
+  const businessPermission =
+    permissions?.BUSINESS?.VIEW ||
+    permissions?.BUSINESS?.CREATE ||
+    permissions?.BUSINESS?.UPDATE ||
+    permissions?.BUSINESS?.DELETE ||
+    false;
+  const permissionPermission =
+    permissions?.PERMISSION?.VIEW ||
+    permissions?.PERMISSION?.CREATE ||
+    permissions?.PERMISSION?.UPDATE ||
+    permissions?.PERMISSION?.DELETE ||
+    false;
+  const rolePermission =
+    permissions?.ROLE?.VIEW ||
+    permissions?.ROLE?.CREATE ||
+    permissions?.ROLE?.UPDATE ||
+    permissions?.ROLE?.DELETE ||
+    false;
+  const userPermission =
+    permissions?.USER?.VIEW ||
+    permissions?.USER?.CREATE ||
+    permissions?.USER?.UPDATE ||
+    permissions?.USER?.DELETE ||
+    false;
+  const reportPermission =
+    permissions?.REPORT?.VIEW ||
+    permissions?.REPORT?.CREATE ||
+    permissions?.REPORT?.UPDATE ||
+    permissions?.REPORT?.DELETE ||
+    false;
 
   const showAlert = useCallback(
     (
@@ -38,16 +70,59 @@ const Sidebar: React.FC = () => {
     []
   );
 
-  const menuItems = useMemo(
-    () => [
-      { name: "Quản lý doanh nghiệp", href: "/dashboard/businesses" },
-      { name: "Phân quyền", href: "/dashboard/permissions" },
-      { name: "Vai trò", href: "/dashboard/roles" },
-      { name: "Người dùng", href: "/dashboard/users" },
-      { name: "Báo cáo ATVSLĐ", href: "/dashboard/reports" },
-    ],
-    []
-  );
+  const menuItems = useMemo(() => {
+    const items = [
+      businessPermission && {
+        name: "Quản lý doanh nghiệp",
+        href: "/dashboard/businesses",
+      },
+      permissionPermission && {
+        name: "Phân quyền",
+        href: "/dashboard/permissions",
+      },
+      rolePermission && {
+        name: "Vai trò",
+        href: "/dashboard/roles",
+      },
+      userPermission && {
+        name: "Người dùng",
+        href: "/dashboard/users",
+      },
+      reportPermission && {
+        name: "Báo cáo ATVSLĐ",
+        href: "/dashboard/reports",
+      },
+    ];
+    return items.filter(Boolean) as { name: string; href: string }[];
+  }, [
+    businessPermission,
+    permissionPermission,
+    rolePermission,
+    userPermission,
+    reportPermission,
+  ]);
+
+  // const menuItems = useMemo(
+  //   () => [
+  //     {
+  //       name: "Quản lý doanh nghiệp",
+  //       href: "/dashboard/businesses",
+  //     },
+  //     {
+  //       name: "Phân quyền",
+  //       href: "/dashboard/permissions",
+  //     },
+  //     { name: "Vai trò", href: "/dashboard/roles" },
+  //     { name: "Người dùng", href: "/dashboard/users" },
+  //     {
+  //       name: "Báo cáo ATVSLĐ",
+  //       href: "/dashboard/reports",
+  //     },
+  //   ],
+  //   []
+  // );
+
+  // console.log("Menu Items:", menuItems);
 
   useEffect(() => {
     const signInStatus = searchParams.get("login");
@@ -55,8 +130,7 @@ const Sidebar: React.FC = () => {
     if (signInStatus === "success") {
       return showAlert("Đăng nhập thành công!", "success");
     }
-  }, [searchParams, showAlert]);
-
+  }, []);
 
   useEffect(() => {
     const storedFullName = Cookies.get("fullName");
@@ -67,18 +141,15 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     const currentPath = pathName;
-    const matchingItem = menuItems.find((item) => item.href === currentPath)
+    const matchingItem = menuItems
+      .filter((item): item is { name: string; href: string } => Boolean(item))
+      .find((item) => item.href === currentPath);
     if (matchingItem) {
-      setSelectedItem(matchingItem.href)
+      setSelectedItem(matchingItem.href);
     } else {
       setSelectedItem(null);
     }
-    
-  }, [pathName, menuItems])
-
-  const toggleSidebar = useCallback(() => {
-    setIsOpen((prev) => !prev);
-  }, []);
+  }, [pathName]);
 
   const toggleSystemMenu = useCallback(() => {
     setIsSystemOpen((prev) => !prev);
@@ -111,6 +182,9 @@ const Sidebar: React.FC = () => {
         Cookies.remove(cookieName, { path: "/" });
       }
     );
+
+    // Xóa dữ liệu khỏi localStorage
+    localStorage.removeItem("userAuthenticated");
 
     router.push("/auth/login?logout=success");
   }, [router, showAlert]);
@@ -162,15 +236,20 @@ const Sidebar: React.FC = () => {
         </div>
         {isSystemOpen && (
           <div className="mt-2">
-            {menuItems.map((item) => (
-              <SidebarItem
-                key={item.name}
-                name={item.name}
-                href={item.href}
-                isSelected={selectedItem === item.href}
-                onSelect={() => setSelectedItem(item.href)}
-              />
-            ))}
+            {menuItems.length > 0 &&
+              menuItems
+                .filter((item): item is { name: string; href: string } =>
+                  Boolean(item)
+                )
+                .map((item) => (
+                  <SidebarItem
+                    key={item.name}
+                    name={item.name}
+                    href={item.href}
+                    isSelected={selectedItem === item.href}
+                    onSelect={() => setSelectedItem(item.href)}
+                  />
+                ))}
           </div>
         )}
       </nav>

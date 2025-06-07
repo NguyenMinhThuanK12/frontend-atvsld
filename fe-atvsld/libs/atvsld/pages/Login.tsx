@@ -11,8 +11,14 @@ import PrimarySelectField from "@/libs/core/components/FormFields/primarySelectF
 import PrimaryPasswordField from "@/libs/core/components/FormFields/primaryPasswordField";
 import PrimaryCheckbox from "@/libs/core/components/CheckBox/primaryCheckBox";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
-import { isEmpty } from "@/libs/atvsld/services/validation/globalValidation";
+import {
+  isEmpty,
+  validatePassword,
+} from "@/libs/atvsld/services/validation/globalValidation";
 import { login } from "../services/api/authApi";
+import { AuthenticationRequest } from "@/libs/shared/atvsld/dto/request/auth-request";
+import { CircularProgress } from "@mui/material";
+import { useAuth } from "../services/context/AuthContext";
 const ForgotPasswordPopup = dynamic(
   () => import("@/libs/atvsld/components/ForgotPasswordPopup"),
   {
@@ -23,18 +29,17 @@ const ForgotPasswordPopup = dynamic(
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [agency, setAgency] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [usernameError, setUsernameError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
-  const [agencyOptions, setAgencyOptions] = useState<
-    { value: string; label: string }[]
-  >([]);
+  const [loading, setLoading] = useState(false); // Add loading state
+  const { setAuthData } = useAuth(); // Import the context to set auth data
 
   const [alert, setAlert] = useState<{
     content: string;
     type: "success" | "error" | "warning" | "info";
+    duration: number;
   } | null>(null);
 
   const searchParams = useSearchParams();
@@ -46,42 +51,16 @@ export default function Login() {
       type: "success" | "error" | "warning" | "info",
       duration = 2000
     ) => {
-      setAlert({ content, type });
+      setAlert({ content, type, duration });
       setTimeout(() => setAlert(null), duration);
     },
     []
   );
 
-  // get departments list
-  // useEffect(() => {
-  //   const fetchDepartments = async () => {
-  //     try {
-  //       const departments = await getDepartmentsForSignIn();
-  //       if (departments.length === 0) {
-  //         showAlert("Không có đơn vị nào được tìm thấy.", "error");
-  //         return;
-  //       }
-
-  //       const options = departments.map((department) => ({
-  //         value: department.id.toString(),
-  //         label: department.name,
-  //       }));
-  //       setAgencyOptions(options);
-
-  //       if (options.length > 0) setAgency(options[0].value);
-  //     } catch (error: any) {
-  //       console.error("Error fetching departments:", error.message);
-  //       showAlert("Có lỗi xảy ra khi tải danh sách đơn vị.", "error");
-  //     }
-  //   };
-
-  //   fetchDepartments();
-  // }, []);
-
   useEffect(() => {
     const logoutStatus = searchParams.get("logout");
     if (logoutStatus === "success") {
-      showAlert("Đăng xuất thành công.", "success")
+      showAlert("Đăng xuất thành công.", "success");
     } else if (logoutStatus === "forced") {
       showAlert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", "error");
     }
@@ -90,6 +69,7 @@ export default function Login() {
   // handle login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true); // Set loading state to true
 
     const fields = {
       username: {
@@ -100,8 +80,8 @@ export default function Login() {
       password: {
         value: password.trim(),
         error: setPasswordError,
-        validate: isEmpty,
-        // validate: (value: string) => isEmpty(value) || !validatePassword(value),
+        // validate: isEmpty,
+        validate: (value: string) => isEmpty(value) || !validatePassword(value),
       },
     };
 
@@ -117,16 +97,19 @@ export default function Login() {
 
     // display alert
     if (hasErrors) {
-      showAlert(isEmpty(username) || isEmpty(password)
-        ? "Vui lòng nhập đầy đủ thông tin."
-        : "Mật khẩu không đúng định dạng", "error")
+      showAlert(
+        isEmpty(username) || isEmpty(password)
+          ? "Vui lòng nhập đầy đủ thông tin."
+          : "Mật khẩu không đúng định dạng",
+        "error"
+      );
+      setLoading(false); // Reset loading state
       return;
     }
 
     // login if no errors
     try {
-      const loginRequest = {
-        department_id: parseInt(agency),
+      const loginRequest: AuthenticationRequest = {
         account: username,
         password: password,
       };
@@ -142,10 +125,10 @@ export default function Login() {
       const refresh_token = response.data.refresh_token;
       const userAuthenticated = response.data.userAuthenticated;
       const fullName = userAuthenticated.full_name;
-      const departmentId = userAuthenticated.department_id.toString();
+      const permissions = userAuthenticated.permissions;
 
       Cookies.set("accessToken", access_token, {
-        expires: rememberMe ? 7 : undefined, 
+        expires: rememberMe ? 7 : undefined,
         secure: true,
         sameSite: "Strict",
       });
@@ -160,14 +143,13 @@ export default function Login() {
         secure: true,
         sameSite: "Strict",
       });
-      Cookies.set("departmentId", departmentId, {
-        expires: rememberMe ? 7 : undefined,
-        secure: true,
-        sameSite: "Strict",
-      });
+
+      // Store permissions in context
+      setAuthData(permissions);
 
 
-      const redirect = searchParams.get("redirect") || "/dashboard/department";
+      const redirect = "/dashboard/greeting";
+      setLoading(false); // Reset loading state
       router.push(redirect + "?login=success");
     } catch (error) {
       showAlert("Có lỗi xảy ra trong quá trình đăng nhập.", "error");
@@ -178,10 +160,17 @@ export default function Login() {
   useEffect(() => {
     const token = Cookies.get("accessToken");
     if (token) {
-      const redirect = searchParams.get("redirect") || "/dashboard/department";
+      const redirect = "/dashboard/greeting";
       router.push(redirect);
     }
   }, [router]);
+
+  const renderLabelWithAsterisk = (label: string, required: boolean) => (
+    <span>
+      {label}
+      {required && <span style={{ color: "red" }}> *</span>}
+    </span>
+  );
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
@@ -200,25 +189,22 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Alert */}
-      {alert && (
-        <Alert content={alert.content} type={alert.type} onClose={() => setAlert(null)} />
-      )}
-
       {/* Right Side - Login Form */}
-      <div className="w-full md:w-1/2 flex flex-col items-center justify-between px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12">
-        <div className="w-full max-w-sm sm:max-w-md shadow-lg p-4 rounded-lg bg-white">
+      <div className=" w-full md:w-1/2 flex flex-col items-center justify-between px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12">
+        <div className="mt-8 w-full max-w-sm sm:max-w-md shadow-lg p-4 rounded-lg bg-white">
           {/* Logo */}
-          <div className="flex h-48 justify-center w-full mb-6">
-            <Image
-              src="/img/login-logo.jpg"
-              alt="Company Logo"
-              width={0}
-              height={0}
-              sizes="100vw"
-              className="w-full h-auto object-contain"
-              priority
-            />
+          <div className="flex flex-col items-center justify-center space-y-5 mb-6">
+            <div className="h-32 w-32 justify-center">
+              <img
+                src="/img/logo-left-side-bar.png"
+                alt="Company Logo"
+                className="w-full h-auto object-contain"
+              />
+            </div>
+
+            <span className="text-gray-800 text-lg font-bold">
+              Hệ thống chuyển đổi kỹ thuật số DTI
+            </span>
           </div>
 
           <div className="text-start mb-6">
@@ -228,28 +214,18 @@ export default function Login() {
           </div>
 
           {/* Login Form */}
-          <form onSubmit={handleLogin} className="space-y-6">
-            {/* <PrimarySelectField
-              label="Đơn vị"
-              value={agency}
-              onChange={(e) => setAgency(e.target.value)}
-              options={agencyOptions}
-              required
-            /> */}
-
+          <form onSubmit={handleLogin}>
             <PrimaryTextField
-              label="Tên tài khoản *"
+              label={renderLabelWithAsterisk("Tên đăng nhập", true)}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="nguyenvanb.stttt"
               error={usernameError}
             />
 
             <PrimaryPasswordField
-              label="Mật khẩu *"
+              label={renderLabelWithAsterisk("Mật khẩu", true)}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••••"
               error={passwordError}
             />
 
@@ -273,10 +249,30 @@ export default function Login() {
               </button>
             </div>
 
-            <PrimaryButton content="Đăng nhập" type="submit" />
+            <PrimaryButton
+              content="Đăng nhập"
+              icon={
+                loading ? <CircularProgress size={24} color="inherit" /> : null
+              }
+              disabled={loading}
+              type="submit"
+              className="w-full"
+              size="large"
+              sx={{ height: "48px", fontSize: "18px", marginTop: "16px" }}
+            />
           </form>
         </div>
       </div>
+
+      {/* Alert */}
+      {alert && (
+        <Alert
+          content={alert.content}
+          type={alert.type}
+          duration={alert.duration}
+          onClose={() => setAlert(null)}
+        />
+      )}
 
       {/* Popup Forgot Password */}
       <ForgotPasswordPopup

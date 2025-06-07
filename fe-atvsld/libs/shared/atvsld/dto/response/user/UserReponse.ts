@@ -1,14 +1,26 @@
+import { Gender } from "@/libs/shared/core/enums/gender";
+import { UserType } from "@/libs/shared/core/enums/userType";
+
 export interface UserResponse {
   id: string;
   account: string;
+  password: string;
   full_name: string;
-  email: string;
-  phone: string;
   job_title: string;
-  role: { id: string; name: string };
-  user_type: string;
-  gender: string;
+  user_type?: UserType;
+  business: { id: string; name: string } | null;
+  role: { id: string; name: string } | null;
+  email: string;
+
+  birthday?: Date;
+  gender?: Gender;
+  phone?: string;
+
   is_active: boolean;
-  avatar_url?: string;
-  created_at: string;
+  avatar?: string | File | null;
+
+  province?: string;
+  district?: string;
+  ward?: string;
+  address?: string;
 }

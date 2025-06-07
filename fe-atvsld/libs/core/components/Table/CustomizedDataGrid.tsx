@@ -21,7 +21,7 @@ export interface ColumnConfig {
   field: string;
   headerName: string;
   inputType?: "text" | "select";
-  options?: { key: string; value: string | undefined }[];
+  options?: { value: string; label: string | undefined }[];
   flex?: number;
   minWidth?: number;
 }
@@ -86,6 +86,12 @@ export default function CustomizedDataGrid<
     },
   };
 
+  const statusOptions = [
+    { key: "all", value: "Tất cả" },
+    { key: "active", value: "Hoạt động" },
+    { key: "inactive", value: "Không hoạt động" },
+  ];
+
   const columns: GridColDef[] = [
     ...columnsConfig.map((col) => ({
       field: col.field,
@@ -132,8 +138,8 @@ export default function CustomizedDataGrid<
                 aria-label={`Header select for ${col.field}`}
               >
                 {col.options.map((option) => (
-                  <MenuItem key={option.key} value={option.value}>
-                    {option.value}
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
                   </MenuItem>
                 ))}
               </Select>
@@ -147,18 +153,32 @@ export default function CustomizedDataGrid<
           {
             field: "status",
             headerName: "Trạng Thái",
-            flex: 0.3,
+            flex: 0.5,
             minWidth: 100,
             editable: false,
             headerAlign: "left",
             renderHeader: () => (
-              <div
-                className="flex flex-col gap-2 w-full"
-                style={{ padding: "8px" }}
-              >
-                <span className="text-[#637381] font-bold w-full mb-[2.75rem] text-sm">
+              <div className="flex flex-col gap-2 w-full">
+                <span className="text-[#637381] font-bold w-full text-sm">
                   Trạng Thái
                 </span>
+                <FormControl fullWidth size="small">
+                  {/* <InputLabel>{col.headerName}</InputLabel> */}
+                  <Select
+                    className="w-full bg-white"
+                    variant="outlined"
+                    sx={{ fontSize: 14, minHeight: 36 }}
+                    MenuProps={menuProps}
+                    value={statusOptions[0].value} // Default to "Tất cả"
+                    aria-label={`Header select for Status`}
+                  >
+                    {statusOptions.map((option) => (
+                      <MenuItem key={option.key} value={option.value}>
+                        {option.value}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </div>
             ),
             renderCell: (params) => (

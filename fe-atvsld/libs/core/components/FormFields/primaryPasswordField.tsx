@@ -11,12 +11,15 @@ import {
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 interface PrimaryPasswordFieldProps {
-  label: string;
+  label: string | React.ReactNode;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   required?: boolean;
   error?: boolean;
+  helperText?: string;
+  disabled?: boolean;
+  size?: "small" | "medium";
 }
 
 const PrimaryPasswordField: React.FC<PrimaryPasswordFieldProps> = ({
@@ -26,6 +29,9 @@ const PrimaryPasswordField: React.FC<PrimaryPasswordFieldProps> = ({
   placeholder,
   required = false,
   error = false,
+  helperText = "",
+  size = "medium",
+  disabled = false,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -61,9 +67,10 @@ const PrimaryPasswordField: React.FC<PrimaryPasswordFieldProps> = ({
           color: error ? "red" : "#3b82f6", // Blue-500 khi focus
         },
         "& .MuiInputLabel-asterisk": {
-          display: "none", // Ẩn dấu *
+          // Ẩn dấu *
         },
       }}
+      size={size}
     >
       <InputLabel htmlFor="outlined-adornment-password">{label}</InputLabel>
       <OutlinedInput
@@ -73,6 +80,9 @@ const PrimaryPasswordField: React.FC<PrimaryPasswordFieldProps> = ({
         onChange={onChange}
         placeholder={placeholder}
         required={required}
+        error={error}
+        disabled={disabled}
+        size={size}
         endAdornment={
           <InputAdornment position="end">
             <IconButton
@@ -89,6 +99,11 @@ const PrimaryPasswordField: React.FC<PrimaryPasswordFieldProps> = ({
         }
         label={label}
       />
+      {helperText ? (
+        <span className="text-[12px] mt-1" style={{ color: error ? "red" : "#6b7280", marginLeft: 8 }}>
+          {helperText}
+        </span>
+      ) : null}
     </FormControl>
   );
 };

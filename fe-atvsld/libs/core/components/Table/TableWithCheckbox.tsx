@@ -144,7 +144,7 @@ function Row(props: {
 
 interface CustomizedCollapseTableWithCheckboxProps {
   rows: GroupPermissionRow[];
-  permissionIds?: string[];
+  permissionIds: string[];
   onComponentSelect?: (componentIds: string[]) => void;
   onGroupSelect?: (componentIds: string[]) => void;
   onFilterChange: (field: string, value: string) => void;
@@ -153,7 +153,7 @@ interface CustomizedCollapseTableWithCheckboxProps {
 
 export default function CustomizedCollapseTableWithCheckbox({
   rows,
-  permissionIds = [],
+  permissionIds,
   onComponentSelect,
   onGroupSelect,
   onFilterChange,
@@ -163,7 +163,7 @@ export default function CustomizedCollapseTableWithCheckbox({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [checkedState, setCheckedState] = useState<CheckedState>({});
 
-  //get all checked component IDs
+  //get all checked component IDs after checkbox changes
   const getAllCheckedComponentIds = (state: CheckedState): string[] => {
     const checkedIds: string[] = [];
     rows.forEach((row) => {
@@ -181,7 +181,7 @@ export default function CustomizedCollapseTableWithCheckbox({
     return checkedIds;
   };
 
-  // Initialize checked state
+  // Initialize checked state when user open modal
   useEffect(() => {
     const initialCheckedState: CheckedState = {};
     rows.forEach((row) => {
@@ -200,7 +200,7 @@ export default function CustomizedCollapseTableWithCheckbox({
       };
     });
     setCheckedState(initialCheckedState);
-  }, [rows]);
+  }, [permissionIds]);
 
   // handle group checkbox change
   const handleGroupCheckboxChange = (groupId: string) => {

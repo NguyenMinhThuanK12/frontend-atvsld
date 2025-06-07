@@ -3,6 +3,7 @@ import Header from "../../components/Header";
 import CustomizedTable from "@/libs/core/components/Table/CustomizedTable";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 import { getComponentPermissionsByGroup, getGroupPermissions } from "../../services/api/permissionApi";
+import { PermissionData } from "../../components/PermissionFeature/handlePerrmissionFeatures";
 
 interface GroupPermissionRow {
   numOrder: number;
@@ -20,6 +21,12 @@ interface ComponentPermissionRow {
 }
 
 export default function PermissionPage() {
+  const permissions = JSON.parse(localStorage.getItem("permissions") || "{}");
+  const viewPermission = permissions?.PERMISSION?.VIEW;
+  const createPermission = permissions?.PERMISSION?.CREATE;
+  const updatePermission = permissions?.PERMISSION?.UPDATE;
+  const deletePermission = permissions?.PERMISSION?.DELETE;
+
   // notify
   const [alert, setAlert] = useState<{
     content: string;
@@ -131,6 +138,7 @@ export default function PermissionPage() {
     }
     fetchData();
   }, [globalDataRows.length, groupDataRows.length]);
+
 
   // filter
   const [filters, setFilters] = useState<Record<string, string>>({});

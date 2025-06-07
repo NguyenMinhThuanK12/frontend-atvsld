@@ -1,6 +1,6 @@
 "use client";
 
-import BusinessPage from "@/libs/atvsld/pages/Business/BusinessPage";
+import BusinessPage from "@/libs/atvsld/pages/Business";
 
 export default function Page() {
   return (

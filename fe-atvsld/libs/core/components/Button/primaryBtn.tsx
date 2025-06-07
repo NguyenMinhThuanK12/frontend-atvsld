@@ -39,6 +39,7 @@ const PrimaryButton: React.FC<PrimaryBtnProps> = ({
         textTransform: "none",
         borderRadius: "8px",
         backgroundColor: "#2962FF",
+        outline: "none",
         ":hover": {
           opacity: 0.8,
         },

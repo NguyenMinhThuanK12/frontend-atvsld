@@ -1,4 +1,6 @@
 import React, { RefObject, useEffect, useRef, useState } from "react";
+import { extractFileName } from "../../../utils/commonFunction";
+import Alert from "@/libs/core/components/Alert/primaryAlert";
 import {
   IconButton,
   Table,
@@ -17,7 +19,6 @@ interface Document {
   fileUrl?: string | null;
 }
 
-
 interface LicenseTableProps {
   step: number;
   businessLicenseFile?: File | string | null;
@@ -25,30 +26,24 @@ interface LicenseTableProps {
   onFileUpload?: (id: number, file: File | null) => void;
 }
 
-const LicenseTable: React.FC<LicenseTableProps> = ({
-  step,
-  businessLicenseFile,
-  otherDocumentFile,
-  onFileUpload,
-}) => {
+export default function LicenseTable(props: LicenseTableProps) {
+  const { step, businessLicenseFile, otherDocumentFile, onFileUpload } = props;
   const [selectedFiles, setSelectedFiles] = useState<
     Record<number, File | null>
   >({});
-  const [savedFiles, setSavedFiles] = useState<Record<number, boolean>>({});
 
-  const extractFileName = (file?: File | string | null) => {
-    if (!file) return "";
-    if (file instanceof File) {
-      return file.name;
-    }
-    const parts = file.split("/");
-    let fileName = parts[parts.length - 1] || "";
-    const uuidPattern =
-      /-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
-    fileName = fileName.replace(uuidPattern, "");
-    const nameParts = fileName.split("pdf");
-    return nameParts[0].trim() + ".pdf";
-  };
+  // Notify
+  const [alert, setAlert] = useState<{
+    content: string;
+    type: "success" | "error" | "warning" | "info";
+    duration?: number;
+  } | null>(null);
+
+  const showAlert = (
+    content: string,
+    type: "success" | "error" | "warning" | "info",
+    duration = 2000
+  ) => setAlert({ content, type, duration });
 
   const fileInputRefs = useRef<RefObject<HTMLInputElement>[]>(
     Array(2)
@@ -56,14 +51,17 @@ const LicenseTable: React.FC<LicenseTableProps> = ({
       .map(() => React.createRef<HTMLInputElement>())
   );
 
+  // Initialize selected files based on props
+  const initialFiles: Record<number, File | null> = {};
+
   useEffect(() => {
-    const initialFiles: Record<number, File | null> = {};
-    if (businessLicenseFile instanceof File) {
-      initialFiles[1] = businessLicenseFile;
-    }
-    if (otherDocumentFile instanceof File) {
-      initialFiles[2] = otherDocumentFile;
-    }
+    // const initialFiles: Record<number, File | null> = {};
+    businessLicenseFile instanceof File
+      ? (initialFiles[1] = businessLicenseFile)
+      : (initialFiles[1] = null);
+    otherDocumentFile instanceof File
+      ? (initialFiles[2] = otherDocumentFile)
+      : (initialFiles[2] = null);
     setSelectedFiles((prev) => ({ ...prev, ...initialFiles }));
   }, [businessLicenseFile, otherDocumentFile]);
 
@@ -72,7 +70,7 @@ const LicenseTable: React.FC<LicenseTableProps> = ({
       id: 1,
       title: "Giấy phép kinh doanh",
       fileName: extractFileName(businessLicenseFile),
-      file: businessLicenseFile instanceof File ? businessLicenseFile : null,
+      file: initialFiles[1],
       fileUrl:
         typeof businessLicenseFile === "string" ? businessLicenseFile : null,
     },
@@ -80,7 +78,7 @@ const LicenseTable: React.FC<LicenseTableProps> = ({
       id: 2,
       title: "Tài liệu khác",
       fileName: extractFileName(otherDocumentFile),
-      file: otherDocumentFile instanceof File ? otherDocumentFile : null,
+      file: initialFiles[2],
       fileUrl: typeof otherDocumentFile === "string" ? otherDocumentFile : null,
     },
   ];
@@ -90,52 +88,38 @@ const LicenseTable: React.FC<LicenseTableProps> = ({
     id: number
   ) => {
     const file = event.target.files?.[0];
-    if (file && file.type === "application/pdf") {
-      setSelectedFiles((prev) => ({
-        ...prev,
-        [id]: file,
-      }));
-      if (onFileUpload) {
-        onFileUpload(id, file);
-      }
-      event.target.value = "";
-    } else {
-      alert("Vui lòng chọn file PDF.");
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      showAlert("Vui lòng chọn file PDF.", "error");
+      return;
     }
+    setSelectedFiles((prev) => ({
+      ...prev,
+      [id]: file,
+    }));
+    onFileUpload?.(id, file);
+    event.target.value = "";
   };
 
-  const handleUploadClick = (id: number, index: number) => {
-    const fileInput = fileInputRefs.current[index].current;
-    if (fileInput) {
-      fileInput.click();
-    }
+  const handleUploadClick = (index: number) => {
+    fileInputRefs.current[index]?.current?.click();
   };
 
   const handleView = (file: File | null, fileUrl?: string | null) => {
-    if (file) {
-      const url = URL.createObjectURL(file);
+    const url = file ? URL.createObjectURL(file) : fileUrl;
+    if (url) {
       window.open(url, "_blank");
-    } else if (fileUrl) {
-      window.open(fileUrl, "_blank");
-    } else {
-      alert("Không có file để xem.");
+      return;
     }
+    showAlert("Không có file để xem.", "warning");
   };
 
   const handleDelete = (id: number) => {
     setSelectedFiles((prev) => {
-      const updatedFiles = { ...prev };
-      delete updatedFiles[id];
-      return updatedFiles;
+      const { [id]: _, ...rest } = prev;
+      return rest;
     });
-    setSavedFiles((prev) => {
-      const updatedSaved = { ...prev };
-      delete updatedSaved[id];
-      return updatedSaved;
-    });
-    if (onFileUpload) {
-      onFileUpload(id, null);
-    }
+    onFileUpload?.(id, null);
   };
 
   return (
@@ -190,7 +174,7 @@ const LicenseTable: React.FC<LicenseTableProps> = ({
                 {step === 1 && (
                   <>
                     <IconButton
-                      onClick={() => handleUploadClick(doc.id, index)}
+                      onClick={() => handleUploadClick(index)}
                       aria-label="Tải lên"
                     >
                       <Upload />
@@ -209,8 +193,14 @@ const LicenseTable: React.FC<LicenseTableProps> = ({
           ))}
         </TableBody>
       </Table>
+      {alert && (
+        <Alert
+          content={alert.content}
+          type={alert.type}
+          duration={alert.duration}
+          onClose={() => setAlert(null)}
+        />
+      )}
     </div>
   );
-};
-
-export default LicenseTable;
+}

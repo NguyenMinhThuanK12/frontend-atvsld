@@ -23,7 +23,6 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.510.0",
     "next": "14.2.28",
-    "next-auth": "^5.0.0-beta.28",
     "react": "^18",
     "react-dom": "^18",
     "react-error-boundary": "^6.0.0",

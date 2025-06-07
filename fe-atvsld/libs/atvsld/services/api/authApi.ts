@@ -1,15 +1,15 @@
 import api from "../configuration/axiosConfig";
 import { ApiResponse } from "@/libs/shared/atvsld/dto/response/api-response";
-import { AuthenticationResponse } from "@/libs/shared/atvsld/dto/response/auth-response";
+import { AuthenticationResponse } from "@/libs/shared/atvsld/dto/response/auth/auth-response";
 import { AuthenticationRequest } from "@/libs/shared/atvsld/dto/request/auth-request";
 import { isAxiosError } from "axios";
-import { ForgotPasswordRequest } from "@/libs/shared/atvsld/dto/response/forgotPassword-request";
+import { ForgotPasswordRequest } from "@/libs/shared/atvsld/dto/response/auth/forgotPassword-request";
 
 export const login = async (
   authRequest: AuthenticationRequest
 ): Promise<ApiResponse<AuthenticationResponse>> => {
-    // log authRequest to the console
-    console.log("Auth Request:", authRequest);
+  // log authRequest to the console
+  console.log("Auth Request:", authRequest);
   try {
     const response = await api.post<ApiResponse<AuthenticationResponse>>(
       "/auth/login",
@@ -69,18 +69,23 @@ export const logout = async (
       }
     }
     return {
-      status: 500, 
+      status: 500,
       message: "Lỗi đăng xuất",
     };
   }
 };
 
-export const forgotPassword = async (forgotPasswordRequest: ForgotPasswordRequest): Promise<ApiResponse<{ message: string }>> => {
+export const forgotPassword = async (
+  forgotPasswordRequest: ForgotPasswordRequest
+): Promise<ApiResponse<{ message: string }>> => {
   try {
-    const response = await api.post<ApiResponse<{ message: string }>>("/auth/forgot-password",forgotPasswordRequest);
+    const response = await api.post<ApiResponse<{ message: string }>>(
+      "/auth/forgot-password",
+      forgotPasswordRequest
+    );
     return response.data;
   } catch (error: unknown) {
-    if (isAxiosError<ApiResponse<{ message: string}>>(error)) {
+    if (isAxiosError<ApiResponse<{ message: string }>>(error)) {
       if (error.response?.data) {
         return error.response.data;
       }
@@ -90,5 +95,4 @@ export const forgotPassword = async (forgotPasswordRequest: ForgotPasswordReques
       message: "Lỗi không xác định từ hệ thống",
     };
   }
-}
-
+};

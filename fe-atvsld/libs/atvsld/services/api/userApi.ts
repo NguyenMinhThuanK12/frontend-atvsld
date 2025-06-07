@@ -16,3 +16,17 @@ export const getUsers = async (): Promise<paginationResponse<UserResponse>> => {
     
   }
 }
+
+export const getUserById = async (id: string): Promise<UserResponse> => {
+  try {
+    const response = await api.get<ApiResponse<UserResponse>>(`/users/${id}`);
+    if (!response.data || !response.data.data) {
+      throw new Error("No data found in the response");
+    }
+    
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching user by ID:", error);
+    throw error;
+  }
+}

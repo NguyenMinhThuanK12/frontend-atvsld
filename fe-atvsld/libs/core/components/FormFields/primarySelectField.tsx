@@ -4,11 +4,15 @@ import React from "react";
 import { TextField, MenuItem } from "@mui/material";
 
 interface PrimarySelectFieldProps {
-  label: string;
+  label: string | React.ReactNode;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   options: { value: string; label: string }[];
   required?: boolean;
+  disabled?: boolean;
+  error?: boolean;
+  helperText?: string | React.ReactNode;
+  size?: "small" | "medium";
 }
 
 const PrimarySelectField: React.FC<PrimarySelectFieldProps> = ({
@@ -17,6 +21,10 @@ const PrimarySelectField: React.FC<PrimarySelectFieldProps> = ({
   onChange,
   options,
   required = false,
+  disabled = false,
+  error = false,
+  helperText = "",
+  size = "medium",
 }) => {
   if (!options) {
     throw new Error("Options is required for select field");
@@ -29,8 +37,12 @@ const PrimarySelectField: React.FC<PrimarySelectFieldProps> = ({
       label={label}
       variant="outlined"
       fullWidth
+      size={size}
       value={value}
       onChange={onChange}
+      disabled={disabled}
+      error={error}
+      helperText={helperText}
       slotProps={{
         select: {
           MenuProps: {
@@ -55,21 +67,34 @@ const PrimarySelectField: React.FC<PrimarySelectFieldProps> = ({
       sx={{
         "& .MuiOutlinedInput-root": {
           "& fieldset": {
-            borderColor: "#d1d5db", // border-gray-300
+            borderColor: error ? "red" : disabled ? "#e5e7eb" : "#d1d5db",
           },
           "&:hover fieldset": {
-            borderColor: "#9ca3af", // border-gray-400
+            borderColor: error ? "red" : disabled ? "#e5e7eb" : "#9ca3af",
           },
           "&.Mui-focused fieldset": {
-            borderColor: "#3b82f6", // focus:ring-blue-500
+            borderColor: error ? "red" : disabled ? "#e5e7eb" : "#3b82f6",
+          },
+          "&.Mui-disabled fieldset": {
+            borderColor: error ? "red" : "#e5e7eb",
           },
         },
         "& .MuiInputLabel-root": {
-          color: "#6b7280", // text-gray-500
+          color: error ? "red" : disabled ? "#D6D6D6" : "#6b7280",
+          "&.Mui-disabled": {
+            color: error ? "red" : "#D6D6D6",
+          },
         },
         "& .MuiInputLabel-shrink": {
-          transform: "translate(14px, -9px) scale(0.75)", // Floating label
-          color: "#3b82f6", // Blue-500 khi focus
+          transform: "translate(14px, -9px) scale(0.75)",
+          color: error ? "red" : disabled ? "#9ca3af" : "#3b82f6",
+        },
+        "& .MuiFormHelperText-root": {
+          color: error ? "red" : "#6b7280",
+          marginTop: "4px",
+        },
+        "& .MuiInputLabel-asterisk": {
+          display: "none",
         },
       }}
     >

@@ -2,29 +2,53 @@
 
 import React, { useEffect, useState } from "react";
 import Header from "../../components/Header";
-import { useRouter } from "next/navigation";
 import CustomizedDataGrid, {
   ColumnConfig,
 } from "@/libs/core/components/Table/CustomizedDataGrid";
-import { StringToNumber } from "lodash";
-import Profile from "../../components/UserFeature/Profile";
-import { UserResponse } from "@/libs/shared/atvsld/dto/response/user/UserReponse";
-import { duration } from "@mui/material";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 import { getUsers } from "../../services/api/userApi";
+import { UserType } from "@/libs/shared/core/enums/userType";
+import { Business } from "@/libs/shared/atvsld/models/business.model";
+import { Role } from "@/libs/shared/atvsld/models/role.model";
+import { getBusinesses } from "../../services/api/businessApi";
+import { getRoles } from "../../services/api/roleApi";
+import UserDetail from "./popup/user-detail";
+import { fetchBusinesses } from "../../components/BusinessFeature/handleBusinessFeatures";
+import { fetchRoles } from "../../components/RoleFeature/handleRoleFeatures";
+import { userTypeOptions } from "../../utils/fetchEnum";
+import { useAuth } from "../../services/context/AuthContext";
 
 interface UserRow {
   id: string;
   fullName: string;
-  account: string;
-  email: string;
-  phone: string;
-  role: string;
+  username: string;
+  userType: UserType | null;
+  businessId: string | null;
+  roleId: string | null;
   jobTitle: string;
   isActive: boolean;
 }
 
 export default function UserPage() {
+  // set permissions in this layout
+  const permissions = useAuth().permissions;
+
+  // data rows send to CustomizedDataGrid
+  const [dataRows, setDataRows] = useState<UserRow[]>([]);
+  // Popup modal for creating or editing user
+  const [openModal, setOpenModal] = useState<boolean>(false);
+  const [id, setId] = useState<string>("");
+  // fetch businesses and roles options
+  const [businessOptions, setBusinessOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [roleOptions, setRoleOptions] = useState<
+    { value: string; label: string }[]
+    >([]);
+  // handle select rows for deleting
+  const [selectedRows, setSelectedRows] = useState<UserRow[]>([]);
+
+
   // notify
   const [alert, setAlert] = useState<{
     content: string;
@@ -38,217 +62,85 @@ export default function UserPage() {
     duration: number = 2000 // default 2 seconds
   ) => {
     setAlert({ content, type, duration });
-  }
-
-  const [dataRows, setDataRows] = useState<UserRow[]>([
-    {
-      id: "1",
-      fullName: "Nguyen Van A",
-      account: "nguyenvana",
-      email: "vana@example.com",
-      phone: "0901234567",
-      role: "Admin",
-      jobTitle: "Manager",
-      isActive: true,
-    },
-    {
-      id: "2",
-      fullName: "Tran Thi B",
-      account: "tranthib",
-      email: "thib@example.com",
-      phone: "0912345678",
-      role: "User",
-      jobTitle: "Developer",
-      isActive: true,
-    },
-    {
-      id: "3",
-      fullName: "Le Van C",
-      account: "levanc",
-      email: "vanc@example.com",
-      phone: "0923456789",
-      role: "User",
-      jobTitle: "Tester",
-      isActive: false,
-    },
-    {
-      id: "4",
-      fullName: "Pham Thi D",
-      account: "phamthid",
-      email: "thid@example.com",
-      phone: "0934567890",
-      role: "Admin",
-      jobTitle: "HR",
-      isActive: true,
-    },
-    {
-      id: "5",
-      fullName: "Hoang Van E",
-      account: "hoangvane",
-      email: "vane@example.com",
-      phone: "0945678901",
-      role: "User",
-      jobTitle: "Designer",
-      isActive: false,
-    },
-    {
-      id: "6",
-      fullName: "Vu Thi F",
-      account: "vuthif",
-      email: "thif@example.com",
-      phone: "0956789012",
-      role: "User",
-      jobTitle: "Support",
-      isActive: true,
-    },
-    {
-      id: "7",
-      fullName: "Do Van G",
-      account: "dovang",
-      email: "vang@example.com",
-      phone: "0967890123",
-      role: "Admin",
-      jobTitle: "Manager",
-      isActive: true,
-    },
-    {
-      id: "8",
-      fullName: "Bui Thi H",
-      account: "buithih",
-      email: "thih@example.com",
-      phone: "0978901234",
-      role: "User",
-      jobTitle: "Developer",
-      isActive: false,
-    },
-    {
-      id: "9",
-      fullName: "Nguyen Van I",
-      account: "nguyenvani",
-      email: "vani@example.com",
-      phone: "0989012345",
-      role: "User",
-      jobTitle: "Tester",
-      isActive: true,
-    },
-    {
-      id: "10",
-      fullName: "Tran Thi J",
-      account: "tranthij",
-      email: "thij@example.com",
-      phone: "0990123456",
-      role: "Admin",
-      jobTitle: "HR",
-      isActive: false,
-    },
-  ]);
-
-  const [users, setUsers] = useState<UserResponse[]>([]);
-
-  const fetchUsers = async () => {
-    try {
-      const response = await getUsers();
-      if(!response.data || response.data.length === 0) {
-        showAlert("Không có người dùng nào được tìm thấy", "info");
-        return;
-      }
-      
-      const formattedRows: UserRow[] = response.data.map((user) => ({
-        id: user.id,
-        fullName: user.full_name,
-        account: user.account,
-        email: user.email,
-        phone: user.phone,
-        role: user.role.name,
-        jobTitle: user.job_title,
-        isActive: user.is_active,
-      }));
-
-      setDataRows(formattedRows);
-      setUsers(response.data);
-
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      // Handle error appropriately, e.g., show a notification or alert
-      
-    }
-  }
-
-  useEffect(() => {
-    fetchUsers(); 
-  }, []);
-
-  const [profilePopup, setProfilePopup] = useState<{
-    isCreate: boolean;
-    onClose: () => void;
-  }>({
-    isCreate: false,
-    onClose: () => setProfilePopup({ isCreate: false, onClose: () => {} }),
-  });
-
-  const handleCreateUser = () => {
-    // router.push("/dashboard/users/create");
-    // setIsCreate(true);
-    setProfilePopup({
-      isCreate: true,
-      onClose: () => setProfilePopup({ isCreate: false, onClose: () => {} }),
-    });
   };
+
+  // fetch businesses and roles for filter box
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      const businessesList = await fetchBusinesses();
+      const rolesList = await fetchRoles();
+      if (isMounted && businessesList && rolesList) {
+        const businessOptions = [
+          { value: "", label: "Tất cả" },
+          ...businessesList.map((business) => ({
+            value: business.id,
+            label: business.name,
+          })),
+        ];
+        const roleOptions = [
+          { value: "", label: "Tất cả" },
+          ...rolesList.map((role) => ({
+            value: role.id,
+            label: role.name,
+          })),
+        ];
+        setBusinessOptions(businessOptions);
+        setRoleOptions(roleOptions);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const ColumnConfig: ColumnConfig[] = [
     {
       field: "fullName",
       headerName: "Họ và tên",
       inputType: "text",
-      minWidth: 150,
-      flex: 1,
+      minWidth: 100,
+      flex: 0.8,
     },
     {
-      field: "account",
+      field: "username",
       headerName: "Tài khoản",
       inputType: "text",
-      minWidth: 150,
-      flex: 1,
+      minWidth: 100,
+      flex: 0.8,
     },
     {
-      field: "email",
-      headerName: "Email",
-      inputType: "text",
-      minWidth: 150,
-      flex: 1,
+      field: "userType",
+      headerName: "Kiểu người dùng",
+      inputType: "select",
+      minWidth: 100,
+      flex: 0.8,
+      options: [{ value: "", label: "Tất cả" }, ...userTypeOptions],
     },
     {
-      field: "phone",
-      headerName: "Số điện thoại",
-      inputType: "text",
-      minWidth: 150,
-      flex: 1,
+      field: "businessId",
+      headerName: "Doanh nghiệp",
+      inputType: "select",
+      minWidth: 100,
+      flex: 0.8,
+      options: businessOptions,
     },
     {
-      field: "role",
+      field: "roleId",
       headerName: "Vai trò",
       inputType: "select",
-      options: [
-        { key: "Admin", value: "Admin" },
-        { key: "User", value: "User" },
-      ],
-      minWidth: 150,
-      flex: 1,
+      options: roleOptions,
+      minWidth: 100,
+      flex: 0.8,
     },
     {
       field: "jobTitle",
       headerName: "Chức vụ",
       inputType: "text",
-      minWidth: 150,
-      flex: 1,
+      minWidth: 100,
+      flex: 0.8,
     },
   ];
-
-  const [selectedRows, setSelectedRows] = useState<UserRow[]>([]);
-  const handleRowSelection = (selectedData: UserRow[]) => {
-    setSelectedRows(selectedData);
-    console.log("Selected rows:", selectedData);
-  };
 
   const [filters, setFilters] = useState<Record<string, string>>({});
   const handleFilterChange = (field: string, value: string) => {
@@ -258,6 +150,16 @@ export default function UserPage() {
     }));
   };
 
+  const handleDisplayCreationPopup = () => {
+    setOpenModal(true);
+    setId("");
+  };
+
+  const handleDisplayEditPopup = (row: UserRow) => {
+    setOpenModal(true);
+    setId(row.id);
+  }
+
   return (
     <div className="w-full h-full px-2">
       <Header
@@ -265,20 +167,29 @@ export default function UserPage() {
         creationPermission={true}
         hasImport={true}
         hasExport={true}
-        onAddNewClick={handleCreateUser}
+        onAddNewClick={handleDisplayCreationPopup}
       />
       <div className="w-full h-full flex items-center justify-between pb-4">
         <CustomizedDataGrid
           rows={dataRows}
           columnsConfig={ColumnConfig}
-          onRowSelectionChange={handleRowSelection}
+          onRowSelectionChange={(selectedData: UserRow[]) =>
+            setSelectedRows(selectedData)
+          }
           hasEdit={true}
           hasView={false}
           filters={filters}
           onFilterChange={handleFilterChange}
         />
       </div>
-      <Profile isCreate={profilePopup.isCreate} onClose={profilePopup.onClose} />
+      <UserDetail
+        openModal={openModal}
+        onClose={() => {
+          setOpenModal(false);
+          setId("");
+        }}
+        idSelected={id}
+      />
       {alert && (
         <Alert
           content={alert.content}

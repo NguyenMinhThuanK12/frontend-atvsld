@@ -8,7 +8,7 @@ import Alert from "@/libs/core/components/Alert/primaryAlert";
 import { validateEmail } from "../services/validation/globalValidation";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { forgotPassword } from "../services/api/authApi";
-import { ForgotPasswordRequest } from "@/libs/shared/atvsld/dto/response/forgotPassword-request";
+import { ForgotPasswordRequest } from "@/libs/shared/atvsld/dto/response/auth/forgotPassword-request";
 
 interface ForgotPasswordPopupProps {
   isOpen: boolean;
@@ -88,12 +88,11 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
       setIsButtonDisabled(true);
       setCountdown(60);
       setEmailError(false);
-
     } catch (error) {
       showAlert("Có lỗi xảy ra trong quá trình gửi email", "error");
       setEmailError(true);
       return;
-    } 
+    }
   };
 
   const closeAlert = () => {
@@ -111,7 +110,7 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
   };
 
   const handleSendZalo = () => {
-    showAlert("Chưa hỗ trợ phương thức này", "info" );
+    showAlert("Chưa hỗ trợ phương thức này", "info");
   };
 
   const handleClose = () => {
@@ -144,18 +143,20 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
               <PrimaryButton
                 content="Gửi mã xác thực qua Zalo"
                 type="button"
+                className="w-full"
                 onClick={handleSendZalo}
               />
               <OutlineButton
                 content="Gửi mã xác thực qua Email"
                 type="button"
+                className="w-full"
                 onClick={handleSelectMethod}
               />
             </div>
           </>
         ) : (
           <>
-            <div className="flex flex-col space-y-2 justify-center items-center border-b pb-2 mb-4 relative">
+            <div className="w-full flex flex-col space-y-2 justify-center items-center border-b pb-2 mb-4 relative">
               <button
                 onClick={handleBack}
                 className="text-gray-900 hover:bg-gray-100 p-2 rounded-full absolute left-0 top-0"
@@ -190,6 +191,7 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
                       ? `Gửi lại sau ${countdown}s`
                       : "Gửi yêu cầu"
                   }
+                    className="w-full"
                   type="submit"
                   disabled={isButtonDisabled}
                 />
