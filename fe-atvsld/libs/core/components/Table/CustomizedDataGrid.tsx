@@ -13,7 +13,7 @@ import {
   FormControl,
 } from "@mui/material";
 import { DataGrid, GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
-import { Eye, Pencil } from "lucide-react";
+import { Eye, KeyRound, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 import ConfirmationDialog from "../Dialog/ConfirmationDialog";
 
@@ -42,6 +42,8 @@ interface CustomDataGridProps<T> {
   hasView?: boolean;
   hasEdit?: boolean;
   hasDelete?: boolean;
+  hasResetPassword?: boolean;
+  onResetPassword?: (rowId: string) => void;
 }
 
 export default function CustomizedDataGrid<
@@ -62,7 +64,11 @@ export default function CustomizedDataGrid<
   hasView = true,
   hasEdit = true,
   hasDelete = true,
+  hasResetPassword = false,
+  onResetPassword,
 }: CustomDataGridProps<T>) {
+  // console.log("Rendering CustomizedDataGrid with rows:", rows);
+
   const [selectedRows, setSelectedRows] = useState<T[]>([]);
   const [isDeleted, setIsDeleted] = useState(false);
 
@@ -87,9 +93,9 @@ export default function CustomizedDataGrid<
   };
 
   const statusOptions = [
-    { key: "all", value: "Tất cả" },
-    { key: "active", value: "Hoạt động" },
-    { key: "inactive", value: "Không hoạt động" },
+    { value: "", label: "Tất cả" },
+    { value: "true", label: "Hoạt động" },
+    { value: "false", label: "Không hoạt động" },
   ];
 
   const columns: GridColDef[] = [
@@ -121,7 +127,6 @@ export default function CustomizedDataGrid<
               <Select
                 className="w-full bg-white"
                 variant="outlined"
-                // onChange={(e) => handleApplyFilter(col.field, e.target.value)}
                 onChange={(e) => onFilterChange(col.field, e.target.value)}
                 value={
                   filters[col.field] ||
@@ -164,17 +169,20 @@ export default function CustomizedDataGrid<
                 </span>
                 <FormControl fullWidth size="small">
                   {/* <InputLabel>{col.headerName}</InputLabel> */}
-                  <Select
+                    <Select
                     className="w-full bg-white"
                     variant="outlined"
                     sx={{ fontSize: 14, minHeight: 36 }}
                     MenuProps={menuProps}
-                    value={statusOptions[0].value} // Default to "Tất cả"
+                    value={filters["isActive"] ?? ""} // Controlled by filters prop
+                    onChange={(e) => {
+                      onFilterChange("isActive", e.target.value);
+                    }}
                     aria-label={`Header select for Status`}
-                  >
+                    >
                     {statusOptions.map((option) => (
-                      <MenuItem key={option.key} value={option.value}>
-                        {option.value}
+                      <MenuItem key={option.label} value={option.value}>
+                        {option.label}
                       </MenuItem>
                     ))}
                   </Select>
@@ -243,6 +251,15 @@ export default function CustomizedDataGrid<
                     <Pencil size={20} />
                   </button>
                 )}
+                {hasResetPassword && (
+                  <button
+                    title="Đặt lại mật khẩu"
+                    aria-label="Đặt lại mật khẩu"
+                    onClick={() => onResetPassword?.(params.row.id)}
+                  >
+                    <KeyRound size={20} />
+                  </button>
+                )}
               </div>
             ),
           } as GridColDef,
@@ -283,8 +300,8 @@ export default function CustomizedDataGrid<
   const onOpenStatusDialog = (rowId: string, isBanned: boolean) => {
     setConfirmDialog({
       title: isBanned
-        ? "Xác nhận chặn doanh nghiệp này ?"
-        : "Xác nhận bỏ chặn doanh nghiệp này ?",
+        ? "Xác nhận chặn đối tượng này ?"
+        : "Xác nhận bỏ chặn đối tượng này ?",
       isOpen: true,
       onConfirm: () => {
         if (onStatusChange) {
@@ -391,7 +408,7 @@ export default function CustomizedDataGrid<
         />
       </Box>
 
-      {selectedRows.length > 0 && isDeleted && (
+      {hasDelete && selectedRows.length > 0 && isDeleted && (
         <SelectedItemForDeleting
           selectedRowsQuantity={selectedRows.length}
           onOpenDeleteDialog={onOpenDeleteDialog}

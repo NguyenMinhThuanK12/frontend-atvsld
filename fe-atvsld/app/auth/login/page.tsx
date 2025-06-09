@@ -1,7 +1,6 @@
-import Login from "@/libs/atvsld/pages/Login";
+import LoginPage from "@/libs/atvsld/pages/Login";
+
 
 export default function page() {
-  return (
-    <Login />
-  );
+  return <LoginPage />;
 }

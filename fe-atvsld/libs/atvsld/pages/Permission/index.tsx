@@ -2,8 +2,12 @@ import React, { useCallback, useEffect, useState } from "react";
 import Header from "../../components/Header";
 import CustomizedTable from "@/libs/core/components/Table/CustomizedTable";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
-import { getComponentPermissionsByGroup, getGroupPermissions } from "../../services/api/permissionApi";
+import {
+  getComponentPermissionsByGroup,
+  getGroupPermissions,
+} from "../../services/api/permissionApi";
 import { PermissionData } from "../../components/PermissionFeature/handlePerrmissionFeatures";
+import { handleGetPermissions } from "../../components/AuthFeature/handleAuthFeature";
 
 interface GroupPermissionRow {
   numOrder: number;
@@ -21,11 +25,18 @@ interface ComponentPermissionRow {
 }
 
 export default function PermissionPage() {
-  const permissions = JSON.parse(localStorage.getItem("permissions") || "{}");
-  const viewPermission = permissions?.PERMISSION?.VIEW;
-  const createPermission = permissions?.PERMISSION?.CREATE;
-  const updatePermission = permissions?.PERMISSION?.UPDATE;
-  const deletePermission = permissions?.PERMISSION?.DELETE;
+  // get permissions from context
+  const permissionPermission = handleGetPermissions().permissionPermission;
+  const canView = permissionPermission[0];
+  if (!canView) {
+    return (
+      <div className="container w-full flex flex-col items-center justify-center h-full">
+        <h1 className="text-2xl font-bold text-gray-700">
+          Bạn không có quyền truy cập vào trang này.
+        </h1>
+      </div>
+    );
+  }
 
   // notify
   const [alert, setAlert] = useState<{
@@ -51,7 +62,7 @@ export default function PermissionPage() {
   const [globalDataRows, setGlobalDataRows] = useState<GroupPermissionRow[]>(
     []
   ); // for filtering
-  
+
   // fetch permissions
   const fetchGroupPermissions = async () => {
     try {
@@ -77,7 +88,7 @@ export default function PermissionPage() {
       console.log("Error fetching group permissions:", error);
       showAlert("Lỗi khi tải dữ liệu quyền nhóm", "error");
     }
-  }
+  };
 
   const fetchComponentPermissions = async (parentCode: string) => {
     try {
@@ -101,9 +112,11 @@ export default function PermissionPage() {
       console.log("Error fetching component permissions:", error);
       showAlert("Lỗi khi tải dữ liệu quyền thành phần", "error");
     }
-  }
+  };
 
-  const loadComponentPermissions = async (groupPermissions: GroupPermissionRow[]) => {
+  const loadComponentPermissions = async (
+    groupPermissions: GroupPermissionRow[]
+  ) => {
     const updatedGroupPermissions = await Promise.all(
       groupPermissions.map(async (group) => {
         const components = await fetchComponentPermissions(group.perCode);
@@ -116,9 +129,9 @@ export default function PermissionPage() {
     setGroupDataRows(updatedGroupPermissions);
     setGlobalDataRows(updatedGroupPermissions); // Store global data for filtering
     console.log("Updated group permissions:", updatedGroupPermissions);
-    
+
     showAlert("Tải dữ liệu quyền thành công", "success");
-  }
+  };
 
   const fetchData = async () => {
     const groupPermissions = await fetchGroupPermissions();
@@ -129,7 +142,7 @@ export default function PermissionPage() {
       return;
     }
     return;
-  }
+  };
 
   useEffect(() => {
     console.log("Running useEffect for data fetch");
@@ -139,11 +152,9 @@ export default function PermissionPage() {
     fetchData();
   }, [globalDataRows.length, groupDataRows.length]);
 
-
   // filter
   const [filters, setFilters] = useState<Record<string, string>>({});
   const handleFilterChange = (field: string, value: string) => {
-    
     setFilters((prev) => {
       const updatedFilters = { ...prev };
       if (value === "") {
@@ -154,11 +165,9 @@ export default function PermissionPage() {
       applyFilters(updatedFilters);
       return updatedFilters;
     });
-
   };
 
   const applyFilters = (localFilters: Record<string, string>) => {
-    
     const filteredRows = globalDataRows.filter((row) => {
       // filter on local data
       const matchesCode = localFilters["permissionCode"]
@@ -172,18 +181,18 @@ export default function PermissionPage() {
             .includes(localFilters["permissionName"].toLowerCase())
         : true;
       return matchesCode && matchesName;
-    })
+    });
     console.log("Filtered rows:", filteredRows);
-    
+
     setGroupDataRows(filteredRows);
-    setTimeout(() => { 
+    setTimeout(() => {
       if (
         filteredRows.length === 0 &&
         (localFilters.permissionCode || localFilters.permissionName)
       ) {
         showAlert("Không tìm thấy quyền phù hợp với điều kiện lọc.", "warning");
       }
-    }, 500)
+    }, 500);
   };
 
   return (

@@ -65,6 +65,7 @@ const PrimarySelectField: React.FC<PrimarySelectFieldProps> = ({
         },
       }}
       sx={{
+        // marginBottom: "1.5rem",
         "& .MuiOutlinedInput-root": {
           "& fieldset": {
             borderColor: error ? "red" : disabled ? "#e5e7eb" : "#d1d5db",

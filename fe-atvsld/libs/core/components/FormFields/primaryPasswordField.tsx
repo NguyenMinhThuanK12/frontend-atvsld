@@ -50,24 +50,34 @@ const PrimaryPasswordField: React.FC<PrimaryPasswordFieldProps> = ({
         marginBottom: "1.5rem",
         "& .MuiOutlinedInput-root": {
           "& fieldset": {
-            borderColor: error ? "red" : "#d1d5db", // border-gray-300
+            borderColor: error ? "red" : disabled ? "#e5e7eb" : "#d1d5db",
           },
           "&:hover fieldset": {
-            borderColor: error ? "red" : "#9ca3af", // border-gray-400
+            borderColor: error ? "red" : disabled ? "#e5e7eb" : "#9ca3af",
           },
           "&.Mui-focused fieldset": {
-            borderColor: error ? "red" : "#3b82f6", // focus:ring-blue-500
+            borderColor: error ? "red" : disabled ? "#e5e7eb" : "#3b82f6",
+          },
+          "&.Mui-disabled fieldset": {
+            borderColor: error ? "red" : "#e5e7eb",
           },
         },
         "& .MuiInputLabel-root": {
-          color: error ? "red" : "#6b7280", // text-gray-500
+          color: error ? "red" : disabled ? "#D6D6D6" : "#6b7280",
+          "&.Mui-disabled": {
+            color: error ? "red" : "#D6D6D6",
+          },
         },
         "& .MuiInputLabel-shrink": {
-          transform: "translate(14px, -9px) scale(0.75)", // Floating label
-          color: error ? "red" : "#3b82f6", // Blue-500 khi focus
+          transform: "translate(14px, -9px) scale(0.75)",
+          color: error ? "red" : disabled ? "#9ca3af" : "#3b82f6",
+        },
+        "& .MuiFormHelperText-root": {
+          color: error ? "red" : "#6b7280",
+          marginTop: "4px",
         },
         "& .MuiInputLabel-asterisk": {
-          // Ẩn dấu *
+          display: "none",
         },
       }}
       size={size}
@@ -84,23 +94,28 @@ const PrimaryPasswordField: React.FC<PrimaryPasswordFieldProps> = ({
         disabled={disabled}
         size={size}
         endAdornment={
-          <InputAdornment position="end">
-            <IconButton
-              aria-label={
-                showPassword ? "hide the password" : "display the password"
-              }
-              onClick={handleClickShowPassword}
-              onMouseDown={handleMouseDownPassword}
-              edge="end"
-            >
-              {showPassword ? <VisibilityOff /> : <Visibility />}
-            </IconButton>
-          </InputAdornment>
+          !disabled && (
+            <InputAdornment position="end">
+              <IconButton
+                aria-label={
+                  showPassword ? "hide the password" : "display the password"
+                }
+                onClick={handleClickShowPassword}
+                onMouseDown={handleMouseDownPassword}
+                edge="end"
+              >
+                {showPassword ? <VisibilityOff /> : <Visibility />}
+              </IconButton>
+            </InputAdornment>
+          )
         }
         label={label}
       />
       {helperText ? (
-        <span className="text-[12px] mt-1" style={{ color: error ? "red" : "#6b7280", marginLeft: 8 }}>
+        <span
+          className="text-[12px] mt-1"
+          style={{ color: error ? "red" : "#6b7280", marginLeft: 8 }}
+        >
           {helperText}
         </span>
       ) : null}

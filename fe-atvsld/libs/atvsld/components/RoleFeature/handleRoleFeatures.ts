@@ -1,3 +1,4 @@
+import { Role } from "@/libs/shared/atvsld/models/role.model";
 import { getRoles } from "../../services/api/roleApi";
 
 export const fetchRoles = async () => {
@@ -13,3 +14,5 @@ export const fetchRoles = async () => {
     console.error("Error fetching data:", error);
   }
 };
+
+

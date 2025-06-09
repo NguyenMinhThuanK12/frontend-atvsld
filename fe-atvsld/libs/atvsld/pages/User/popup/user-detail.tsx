@@ -1,6 +1,9 @@
 "use client";
 
-import { fetchBusinesses } from "@/libs/atvsld/components/BusinessFeature/handleBusinessFeatures";
+import {
+  fetchActiveBusinesses,
+  fetchBusinesses,
+} from "@/libs/atvsld/components/BusinessFeature/handleBusinessFeatures";
 import { fetchRoles } from "@/libs/atvsld/components/RoleFeature/handleRoleFeatures";
 import { validateImageFile } from "@/libs/atvsld/services/validation/globalValidation";
 import { renderLabelWithAsterisk } from "@/libs/atvsld/utils/commonFunction";
@@ -19,26 +22,51 @@ import { avatarPreviewModalStyle } from "@/libs/core/styles/globalStyle";
 import { User } from "@/libs/shared/atvsld/models/user.model";
 import { UserType } from "@/libs/shared/core/enums/userType";
 import AddAPhotoSharpIcon from "@mui/icons-material/AddAPhotoSharp";
-import {Dialog, DialogTitle, Fade, Modal, Backdrop } from "@mui/material";
+import {
+  Dialog,
+  DialogTitle,
+  Fade,
+  Modal,
+  Backdrop,
+  CircularProgress,
+} from "@mui/material";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { id, vi } from "date-fns/locale";
+import { vi } from "date-fns/locale";
 import { Eye, SwitchCamera, Trash2, X } from "lucide-react";
 import { Box } from "@mui/material";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import {
+  createUserFeature,
+  defaultUser,
+  getUserByIdFeature,
+  updateUserFeature,
+} from "@/libs/atvsld/components/UserFeature/handleUserFeatures";
+import { debounce, set } from "lodash";
+import {
+  checkDuplicateUsername,
+  checkEmailDuplicate,
+} from "@/libs/atvsld/services/api/userApi";
+import {
+  mappingUserToCreationUserRequest,
+  mappingUserToUpdateUserRequest,
+} from "@/libs/shared/atvsld/mapping/UserMapping";
+import ConfirmationDialog from "@/libs/core/components/Dialog/ConfirmationDialog";
+import { Business } from "@/libs/shared/atvsld/models/business.model";
 
 interface UserDetailProps {
   openModal: boolean;
-  onClose?: () => void;
-  onSave?: () => void;
-  idSelected?: string;
+  onClose: () => void;
+  onSave: () => void;
+  selectedId?: string;
 }
 
 export function UserDetail(props: UserDetailProps) {
-  const { openModal, onClose, onSave, idSelected } = props;
-  const [selectedUser, setSelectedUser] = useState<User>();
+  const { openModal, onClose, onSave, selectedId } = props;
+
+  const [selectedUser, setSelectedUser] = useState<User>(defaultUser);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
   // fetch ward options based on selected district
@@ -49,6 +77,7 @@ export function UserDetail(props: UserDetailProps) {
   const [businessOptions, setBusinessOptions] = useState<
     { value: string; label: string }[]
   >([]);
+  const [activeBusinesses, setActiveBusinesses] = useState<Business[]>([]); // businesses list for query email automatically
   const [roleOptions, setRoleOptions] = useState<
     { value: string; label: string }[]
   >([]);
@@ -56,22 +85,42 @@ export function UserDetail(props: UserDetailProps) {
   const [isLargerAvatar, setIsLargerAvatar] = useState(false);
   // handle active toggle
   const [isActive, setIsActive] = useState(true);
+  // loading state
+  const [loading, setLoading] = useState(false);
 
   const {
     control,
     watch,
     handleSubmit,
     trigger,
+    reset,
     formState: { errors },
     setValue,
+    setError,
+    clearErrors,
   } = useForm<User>({
     defaultValues: selectedUser,
     mode: "onSubmit",
   });
 
+  // ensure the form resets when selectedUser changes
+  useEffect(() => {
+    if (selectedUser) {
+      reset(selectedUser);
+      setAvatarPreview(
+        typeof selectedUser.avatar === "string" || selectedUser.avatar == null
+          ? selectedUser.avatar ?? null
+          : null
+      );
+      setIsActive(selectedUser.isActive);
+      setSelectedDistrict(selectedUser.district || "");
+    }
+  }, [selectedUser, reset]);
+
   const userType = watch("userType");
   const province = watch("province");
   const district = watch("district");
+  const businessId = watch("businessId");
 
   // notify
   const [alert, setAlert] = useState<{
@@ -80,39 +129,44 @@ export function UserDetail(props: UserDetailProps) {
     duration?: number; // optional duration for the alert
   } | null>(null);
 
-  const showAlert = useCallback(
-    (
-      content: string,
-      type: "success" | "error" | "warning" | "info",
-      duration = 2000
-    ) => {
-      setAlert({ content, type, duration });
-      setTimeout(() => setAlert(null), duration);
-    },
-    []
-  );
+  const showAlert = (
+    content: string,
+    type: "success" | "error" | "warning" | "info",
+    duration = 2000
+  ) => setAlert({ content, type, duration });
 
   // handle get user detail by id
   useEffect(() => {
     const fetchData = async () => {
-      if (idSelected) {
-        await getDetail(idSelected);
+      if (selectedId) {
+        await getDetail(selectedId);
       } else {
+        setSelectedUser(defaultUser);
         setValue("password", "Abcd1@34"); // Reset password to default value
       }
     };
     fetchData();
-  }, [idSelected]);
+  }, [selectedId]);
 
   const getDetail = async (id: string) => {
     console.log("Fetch user by id: ", id);
+    const selectedUser = await getUserByIdFeature(id);
+    if (!selectedUser) {
+      showAlert(`Không tìm thấy người dùng với ID: ${id}`, "error");
+      return;
+    }
+    console.log("Selected User:", selectedUser);
+
+    setSelectedUser(selectedUser);
   };
 
   // fetch businesses and roles for dropdown options
   useEffect(() => {
+    console.log("Fetching businesses and roles options...");
+
     let isMounted = true;
     (async () => {
-      const businessesList = await fetchBusinesses();
+      const businessesList = await fetchActiveBusinesses();
       const rolesList = await fetchRoles();
       if (isMounted && businessesList && rolesList) {
         const businessOptions = businessesList.map((business) => ({
@@ -123,6 +177,7 @@ export function UserDetail(props: UserDetailProps) {
           value: role.id,
           label: role.name,
         }));
+        setActiveBusinesses(businessesList);
         setBusinessOptions(businessOptions);
         setRoleOptions(roleOptions);
       }
@@ -132,6 +187,94 @@ export function UserDetail(props: UserDetailProps) {
     };
   }, []);
 
+  // query email based on business
+  useEffect(() => {
+    if (businessId && activeBusinesses.length > 0 && !!!selectedId) {
+      const business = activeBusinesses.find((b) => b.id === businessId);
+      console.log("Selected Business:", business);
+      if (business) {
+        setValue("email", business.email || "");
+      } else {
+        setValue("email", "");
+      }
+    } 
+  }, [businessId]);
+
+
+  // Create debounced functions for checking duplicates
+  const debouncedCheckUsername = useCallback(
+    debounce(async (username: string) => {
+      if (!username) {
+        clearErrors("username");
+        return;
+      }
+      const isDuplicate = await checkDuplicateUsername(username);
+      if (isDuplicate) {
+        setError("username", {
+          type: "manual",
+          message: "Tài khoản đã tồn tại",
+        });
+      } else {
+        clearErrors("username");
+      }
+    }, 1000),
+    [setError, clearErrors, showAlert, selectedId]
+  );
+
+  const debouncedCheckEmail = useCallback(
+    debounce(async (email: string) => {
+      if (!email) {
+        clearErrors("email");
+        return;
+      }
+      const isDuplicate = await checkEmailDuplicate(email);
+      if (isDuplicate) {
+        setError("email", {
+          type: "manual",
+          message: "Email đã tồn tại",
+        });
+      } else {
+        clearErrors("email");
+      }
+    }, 1000),
+    [setError, clearErrors]
+  );
+
+  const handleToggleActiveStatus = () => {
+    setIsActive(!isActive);
+    setValue("isActive", !isActive);
+  };
+
+  // handle create user
+  const handleCreateUser = async (data: User) => {
+    try {
+      const request = mappingUserToCreationUserRequest(data);
+      const response = await createUserFeature(request);
+      return response;
+    } catch (error) {
+      setLoading(false);
+      console.error("Error creating user:", error);
+      showAlert("Lỗi khi tạo người dùng. Vui lòng thử lại.", "error", 2000);
+    }
+  };
+
+  // handle update user
+  const handleUpdateUser = async (data: User) => {
+    try {
+      const request = mappingUserToUpdateUserRequest(data);
+      const response = await updateUserFeature(data.id, request);
+      return response;
+    } catch (error) {
+      setLoading(false);
+      console.error("Error updating user:", error);
+      showAlert(
+        "Lỗi khi cập nhật người dùng. Vui lòng thử lại.",
+        "error",
+        2000
+      );
+    }
+  };
+
   // handle submit form
   const onSubmit = async (data: User) => {
     const isValid = await trigger();
@@ -140,8 +283,17 @@ export function UserDetail(props: UserDetailProps) {
       showAlert("Vui lòng điền đầy đủ các trường bắt buộc", "error", 2000);
       return;
     }
-    console.log("Submitted Data:", data);
-    showAlert("Dữ liệu đã được gửi thành công", "success", 2000);
+    setLoading(true);
+
+    const success = selectedId
+      ? await handleUpdateUser(data)
+      : await handleCreateUser(data);
+
+    setLoading(false);
+    if (success) {
+      setAvatarPreview(null); // Reset avatar preview after save
+      onSave();
+    }
   };
 
   return (
@@ -167,7 +319,7 @@ export function UserDetail(props: UserDetailProps) {
           {/* Header */}
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-semibold text-gray-800">
-              {idSelected ? "Chỉnh sửa người dùng" : "Thêm mới người dùng"}
+              {selectedId ? "Chỉnh sửa người dùng" : "Thêm mới người dùng"}
             </h1>
             <button
               className="p-2 flex items-center justify-center cursor-pointe hover:bg-gray-50 rounded-full"
@@ -188,9 +340,7 @@ export function UserDetail(props: UserDetailProps) {
                 rules={{
                   validate: (file) => {
                     if (!file) return true;
-                    const { isValid, errorMessage } = validateImageFile(
-                      file as File
-                    );
+                    const { isValid, errorMessage } = validateImageFile(file);
                     if (!isValid && errorMessage) {
                       showAlert(errorMessage, "error", 2000);
                       return false;
@@ -319,14 +469,14 @@ export function UserDetail(props: UserDetailProps) {
               </Modal>
 
               {/* Active Toggle */}
-              {idSelected && (
-                <div className="flex items-center justify-evenly space-x-16">
+              {selectedId && (
+                <div className="w-full flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700">
                     Hoạt động
                   </span>
                   <button
                     type="button"
-                    onClick={() => setIsActive(!isActive)}
+                    onClick={handleToggleActiveStatus}
                     className={`relative inline-flex h-4 w-10 items-center rounded-full transition-colors ${
                       isActive ? "bg-[#93b0ff]" : "bg-gray-200"
                     }`}
@@ -353,9 +503,16 @@ export function UserDetail(props: UserDetailProps) {
                     label={renderLabelWithAsterisk("Tài khoản", true)}
                     size="small"
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                      if (!!!selectedId) {
+                        // Only check for duplicates if not editing
+                        debouncedCheckUsername(e.target.value);
+                      }
+                    }}
                     error={!!errors.username}
                     helperText={errors.username?.message}
+                    disabled={!!selectedId} // Disable if editing
                   />
                 )}
               />
@@ -375,7 +532,7 @@ export function UserDetail(props: UserDetailProps) {
                       placeholder="************"
                       error={!!errors.password}
                       helperText={errors.password?.message}
-                      disabled={idSelected !== ""} // Disable if editing
+                      disabled={!!selectedId} // Disable if editing
                     />
                   </div>
                 )}
@@ -434,7 +591,7 @@ export function UserDetail(props: UserDetailProps) {
                       options={userTypeOptions}
                       error={!!errors.userType}
                       helperText={errors.userType?.message}
-                      disabled={idSelected !== ""} // Disable the field if editing
+                      disabled={selectedId !== ""} // Disable the field if editing
                     />
                   </div>
                 )}
@@ -464,7 +621,7 @@ export function UserDetail(props: UserDetailProps) {
                       disabled={
                         !userType ||
                         userType === UserType.ADMIN ||
-                        idSelected !== ""
+                        selectedId !== ""
                       }
                       error={!!errors.businessId}
                       helperText={errors.businessId?.message}
@@ -495,7 +652,7 @@ export function UserDetail(props: UserDetailProps) {
                       disabled={
                         userType === UserType.BUSINESS ||
                         !userType ||
-                        idSelected !== ""
+                        selectedId !== ""
                       }
                       error={!!errors.roleId}
                       helperText={errors.roleId?.message}
@@ -520,10 +677,16 @@ export function UserDetail(props: UserDetailProps) {
                     label={renderLabelWithAsterisk("Email", true)}
                     size="small"
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                      if (!!!selectedId) {
+                        debouncedCheckEmail(e.target.value);
+                      }
+                    }}
                     placeholder="example@email.com"
                     error={!!errors.email}
                     helperText={errors.email?.message}
+                    disabled={!!selectedId} // Disable if editing
                   />
                 )}
               />
@@ -555,18 +718,20 @@ export function UserDetail(props: UserDetailProps) {
                 name="birthday"
                 control={control}
                 render={({ field }) => (
-                  <DatePicker
-                    label={renderLabelWithAsterisk("Ngày sinh", false)}
-                    value={field.value ? new Date(field.value) : null}
-                    onChange={(date) => field.onChange(date)}
-                    slotProps={{
-                      textField: {
-                        error: !!errors.birthday,
-                        helperText: errors.birthday?.message,
-                        size: "small", // Set size to medium
-                      },
-                    }}
-                  />
+                  <div className="mb-6">
+                    <DatePicker
+                      label={renderLabelWithAsterisk("Ngày sinh", false)}
+                      value={field.value ? new Date(field.value) : null}
+                      onChange={(date) => field.onChange(date)}
+                      slotProps={{
+                        textField: {
+                          error: !!errors.birthday,
+                          helperText: errors.birthday?.message,
+                          size: "small", // Set size to medium
+                        },
+                      }}
+                    />
+                  </div>
                 )}
               />
 
@@ -575,17 +740,15 @@ export function UserDetail(props: UserDetailProps) {
                 name="gender"
                 control={control}
                 render={({ field }) => (
-                  <div className="mb-4">
-                    <PrimarySelectField
-                      label={renderLabelWithAsterisk("Giới tính", false)}
-                      value={field.value ?? ""}
-                      size="small"
-                      onChange={field.onChange}
-                      options={genderOptions}
-                      error={!!errors.gender}
-                      helperText={errors.gender?.message}
-                    />
-                  </div>
+                  <PrimarySelectField
+                    label={renderLabelWithAsterisk("Giới tính", false)}
+                    value={field.value ?? ""}
+                    size="small"
+                    onChange={field.onChange}
+                    options={genderOptions}
+                    error={!!errors.gender}
+                    helperText={errors.gender?.message}
+                  />
                 )}
               />
 
@@ -594,17 +757,15 @@ export function UserDetail(props: UserDetailProps) {
                 name="province"
                 control={control}
                 render={({ field }) => (
-                  <div className="mb-4">
-                    <PrimarySelectField
-                      label={renderLabelWithAsterisk("Tỉnh / Thành phố", false)}
-                      value={field.value ?? ""}
-                      size="small"
-                      onChange={field.onChange}
-                      options={newCityOptions}
-                      error={!!errors.province}
-                      helperText={errors.province?.message}
-                    />
-                  </div>
+                  <PrimarySelectField
+                    label={renderLabelWithAsterisk("Tỉnh / Thành phố", false)}
+                    value={field.value ?? ""}
+                    size="small"
+                    onChange={field.onChange}
+                    options={newCityOptions}
+                    error={!!errors.province}
+                    helperText={errors.province?.message}
+                  />
                 )}
               />
 
@@ -613,23 +774,21 @@ export function UserDetail(props: UserDetailProps) {
                 name="district"
                 control={control}
                 render={({ field }) => (
-                  <div className="mb-4">
-                    <PrimarySelectField
-                      label={renderLabelWithAsterisk("Quận / Huyện", false)}
-                      value={field.value ?? ""}
-                      size="small"
-                      onChange={(e) => {
-                        console.log("Selected District:", e.target.value);
-                        setSelectedDistrict(e.target.value);
-                        field.onChange(e);
-                        setValue("ward", "");
-                      }}
-                      options={newDistrictOptions}
-                      disabled={!province}
-                      error={!!errors.district}
-                      helperText={errors.district?.message}
-                    />
-                  </div>
+                  <PrimarySelectField
+                    label={renderLabelWithAsterisk("Quận / Huyện", false)}
+                    value={field.value ?? ""}
+                    size="small"
+                    onChange={(e) => {
+                      console.log("Selected District:", e.target.value);
+                      setSelectedDistrict(e.target.value);
+                      field.onChange(e);
+                      setValue("ward", "");
+                    }}
+                    options={newDistrictOptions}
+                    disabled={!province}
+                    error={!!errors.district}
+                    helperText={errors.district?.message}
+                  />
                 )}
               />
 
@@ -638,18 +797,16 @@ export function UserDetail(props: UserDetailProps) {
                 name="ward"
                 control={control}
                 render={({ field }) => (
-                  <div className="mb-4">
-                    <PrimarySelectField
-                      label={renderLabelWithAsterisk("Phường / Xã", false)}
-                      value={field.value ?? ""}
-                      size="small"
-                      onChange={field.onChange}
-                      options={wardOptions}
-                      disabled={!district || wardOptions.length === 0}
-                      error={!!errors.ward}
-                      helperText={errors.ward?.message}
-                    />
-                  </div>
+                  <PrimarySelectField
+                    label={renderLabelWithAsterisk("Phường / Xã", false)}
+                    value={field.value ?? ""}
+                    size="small"
+                    onChange={field.onChange}
+                    options={wardOptions}
+                    disabled={!district || wardOptions.length === 0}
+                    error={!!errors.ward}
+                    helperText={errors.ward?.message}
+                  />
                 )}
               />
 
@@ -661,7 +818,7 @@ export function UserDetail(props: UserDetailProps) {
                   <PrimaryTextField
                     label={renderLabelWithAsterisk("Địa chỉ", false)}
                     size="small"
-                    value={field.value}
+                    value={field.value ?? ""}
                     onChange={field.onChange}
                     placeholder="Nhập địa chỉ"
                     error={!!errors.address}
@@ -676,7 +833,10 @@ export function UserDetail(props: UserDetailProps) {
           <div className="flex justify-end pt-4">
             <PrimaryButton
               content="Lưu"
-              disabled={false}
+              disabled={loading}
+              icon={
+                loading ? <CircularProgress size={24} color="inherit" /> : null
+              }
               size="medium"
               type="submit"
               className="bg-blue-600 text-white px-6 py-1.5 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"

@@ -1,12 +1,4 @@
-import { BusinessType } from "@/libs/shared/core/enums/businessType";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  deleteBusiness,
-  filterBusinesses,
-  getBusinesses,
-  updateBusinessStatus,
-} from "../../services/api/businessApi";
-import wardsData from "@/public/json/wards.json";
 import { businessTypeOptions } from "../../utils/fetchEnum";
 import CustomizedDataGrid, {
   ColumnConfig,
@@ -14,8 +6,6 @@ import CustomizedDataGrid, {
 import { useRouter, useSearchParams } from "next/navigation";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 import Header from "../../components/Header";
-import { QueryBusinessRequest } from "@/libs/shared/atvsld/dto/request/business/queryBussinessRequest";
-import { useAuth } from "../../services/context/AuthContext";
 import {
   applyFilters,
   fetchBusinesses,
@@ -26,6 +16,8 @@ import {
   newDistrictOptions,
   newWardOptions,
 } from "../../utils/fetchProvinceJson";
+import { get } from "lodash";
+import { handleGetPermissions } from "../../components/AuthFeature/handleAuthFeature";
 
 export interface BusinessRow {
   id: string;
@@ -39,12 +31,29 @@ export interface BusinessRow {
 }
 
 export default function BusinessPage() {
-  // get permissions from localStorage
-  // const permissions = useAuth().permissions;
-  // const viewPermission = permissions?.BUSINESS?.VIEW;
-  // const createPermission = permissions?.BUSINESS?.CREATE;
-  // const updatePermission = permissions?.BUSINESS?.UPDATE;
-  // const deletePermission = permissions?.BUSINESS?.DELETE;
+  // get permissions from context
+  const businessPermission = handleGetPermissions().businessPermission;
+  const canView = businessPermission[0];
+  const canCreate = businessPermission[1];
+  const canUpdate = businessPermission[2];
+  const canDelete = businessPermission[3];
+
+  console.log("Business Permissions:", {
+    canView,
+  canCreate,
+    canUpdate,
+    canDelete,
+  });
+  if (!canView && !canCreate && !canUpdate && !canDelete) {
+    return (
+      <div className="container w-full flex flex-col items-center justify-center h-full">
+        <h1 className="text-2xl font-bold text-gray-700">
+          Bạn không có quyền truy cập vào trang này.
+        </h1>
+      </div>
+    );
+  }
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const [dataRows, setDataRows] = useState<BusinessRow[]>([]);
@@ -160,21 +169,23 @@ export default function BusinessPage() {
         updatedFilters[field] = value;
       }
       setFilters(updatedFilters);
+      field === "district" && setSelectedDistrict(value); // Update selected district when filtering by district
 
       // Fetch filtered businesses
       const filteredBusinesses = await applyFilters(updatedFilters);
 
       // Map BusinessResponse to BusinessRow
-      const mappedRows: BusinessRow[] = filteredBusinesses?.map((dept: any) => ({
-        id: dept.id,
-        name: dept.name,
-        taxCode: dept.taxCode,
-        businessType: dept.businessType ? String(dept.businessType) : "",
-        mainBusinessField: dept.mainBusinessField,
-        district: dept.registrationDistrict,
-        ward: dept.registrationWard,
-        isActive: dept.isActive,
-      })) ?? [];
+      const mappedRows: BusinessRow[] =
+        filteredBusinesses?.map((dept: any) => ({
+          id: dept.id,
+          name: dept.name,
+          taxCode: dept.taxCode,
+          businessType: dept.businessType ? String(dept.businessType) : "",
+          mainBusinessField: dept.mainBusinessField,
+          district: dept.registrationDistrict,
+          ward: dept.registrationWard,
+          isActive: dept.isActive,
+        })) ?? [];
 
       if (filteredBusinesses && mappedRows.length === 0) {
         showAlert(
@@ -195,9 +206,7 @@ export default function BusinessPage() {
 
     setDataRows((prevRows) =>
       prevRows.map((row) =>
-        row.id === rowId
-          ? { ...row, isActive: Boolean(updatedStatus) }
-          : row
+        row.id === rowId ? { ...row, isActive: Boolean(updatedStatus) } : row
       )
     );
   };
@@ -248,7 +257,7 @@ export default function BusinessPage() {
         title="Danh Sách Doanh Nghiệp"
         onAddNewClick={handleDisplayCreationPage}
         // creationPermission={createPermission}
-        creationPermission={true}
+        creationPermission={canCreate}
         hasImport={true}
         hasExport={true}
         hasAddNew={true}
@@ -267,8 +276,8 @@ export default function BusinessPage() {
         onFilterChange={handleFilterChange}
         filters={filters}
         hasStatus={true}
-        hasView={true}
-        hasEdit={true}
+        hasView={canView}
+        hasEdit={canUpdate}
         hasDelete={true}
         // hasView={viewPermission}
         // hasEdit={updatePermission}

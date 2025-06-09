@@ -1,7 +1,7 @@
 "use client";
 
+import { useAdminMenuItems } from "@/libs/atvsld/components/AuthFeature/handleAuthFeature";
 import Sidebar from "@/libs/atvsld/components/Sidebar";
-import { AuthProvider } from "@/libs/atvsld/services/context/AuthContext";
 
 export default function MainLayout({
   children,
@@ -9,9 +9,11 @@ export default function MainLayout({
   children: React.ReactNode;
   }) {
   
+    const menuItems = useAdminMenuItems();
+  
   return (
     <>
-      <Sidebar />
+      <Sidebar menuItems={menuItems} />
       <main className="pl-80 bg-[url('/img/background.jpg')] bg-cover bg-no-repeat bg-center h-screen">
         {children}
       </main>

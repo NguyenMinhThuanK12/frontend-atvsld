@@ -7,10 +7,8 @@ import { QueryRoleRequest } from "@/libs/shared/atvsld/dto/request/role/queryRol
 
 export const getRoles = async (): Promise<paginationResponse<RoleResponse>> => {
     try {
-        console.log("Fetching roles...");
         const response = await api.get<ApiResponse<paginationResponse<RoleResponse>>>("/roles");
         
-        console.log("API Response:", response.data.data);
         if (!response.data.data) {
         throw new Error("No data found in the response");
         }
@@ -23,10 +21,8 @@ export const getRoles = async (): Promise<paginationResponse<RoleResponse>> => {
 
 export const createRole = async (role: CreationRoleRequest): Promise<ApiResponse<RoleResponse>> => {
     try {
-        console.log("Creating role:", role);
         const response = await api.post<ApiResponse<RoleResponse>>("/roles", role);
         
-        console.log("Role created successfully:", response.data);
         return response.data;
     } catch (error) {
         console.error("Error creating role:", error);
@@ -42,7 +38,6 @@ export const checkDuplicateRoleCode = async (code: string): Promise<ApiResponse<
         if (!response.data || response.data.data === undefined) {
             throw new Error("No data found in the response");
         }
-        console.log("Duplicate role code check response:", response.data);
         return response.data;
     } catch (error) {
         console.error("Error checking duplicate role code:", error);
@@ -52,13 +47,11 @@ export const checkDuplicateRoleCode = async (code: string): Promise<ApiResponse<
 
 export const getById = async (id: string): Promise<ApiResponse<RoleResponse>> => {
     try {
-        console.log("Fetching role by ID:", id);
         const response = await api.get<ApiResponse<RoleResponse>>(`/roles/${id}`);
         
         if (!response.data || !response.data.data) {
             throw new Error("No role found with the given ID");
         }
-        console.log("Role fetched successfully:", response.data);
         return response.data;
     } catch (error) {
         console.error("Error fetching role by ID:", error);

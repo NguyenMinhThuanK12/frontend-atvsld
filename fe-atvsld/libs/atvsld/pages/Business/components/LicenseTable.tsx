@@ -30,7 +30,13 @@ export default function LicenseTable(props: LicenseTableProps) {
   const { step, businessLicenseFile, otherDocumentFile, onFileUpload } = props;
   const [selectedFiles, setSelectedFiles] = useState<
     Record<number, File | null>
-  >({});
+    >({});
+  
+  // Debugging 
+  useEffect(() => {
+    console.log("Selected Files:", selectedFiles);
+  }
+  , [selectedFiles]);
 
   // Notify
   const [alert, setAlert] = useState<{
@@ -52,16 +58,13 @@ export default function LicenseTable(props: LicenseTableProps) {
   );
 
   // Initialize selected files based on props
-  const initialFiles: Record<number, File | null> = {};
-
   useEffect(() => {
-    // const initialFiles: Record<number, File | null> = {};
-    businessLicenseFile instanceof File
-      ? (initialFiles[1] = businessLicenseFile)
-      : (initialFiles[1] = null);
-    otherDocumentFile instanceof File
-      ? (initialFiles[2] = otherDocumentFile)
-      : (initialFiles[2] = null);
+    const initialFiles: Record<number, File | null> = {};
+    [businessLicenseFile, otherDocumentFile].forEach((file, idx) => {
+      if (file instanceof File) {
+      initialFiles[idx + 1] = file;
+      }
+    });
     setSelectedFiles((prev) => ({ ...prev, ...initialFiles }));
   }, [businessLicenseFile, otherDocumentFile]);
 
@@ -70,7 +73,7 @@ export default function LicenseTable(props: LicenseTableProps) {
       id: 1,
       title: "Giấy phép kinh doanh",
       fileName: extractFileName(businessLicenseFile),
-      file: initialFiles[1],
+      file: businessLicenseFile instanceof File ? businessLicenseFile : null,
       fileUrl:
         typeof businessLicenseFile === "string" ? businessLicenseFile : null,
     },
@@ -78,7 +81,7 @@ export default function LicenseTable(props: LicenseTableProps) {
       id: 2,
       title: "Tài liệu khác",
       fileName: extractFileName(otherDocumentFile),
-      file: initialFiles[2],
+      file: otherDocumentFile instanceof File ? otherDocumentFile : null,
       fileUrl: typeof otherDocumentFile === "string" ? otherDocumentFile : null,
     },
   ];

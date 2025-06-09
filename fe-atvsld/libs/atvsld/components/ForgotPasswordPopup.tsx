@@ -8,7 +8,7 @@ import Alert from "@/libs/core/components/Alert/primaryAlert";
 import { validateEmail } from "../services/validation/globalValidation";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { forgotPassword } from "../services/api/authApi";
-import { ForgotPasswordRequest } from "@/libs/shared/atvsld/dto/response/auth/forgotPassword-request";
+import { ForgotPasswordRequest } from "@/libs/shared/atvsld/dto/request/forgotPassword-request";
 
 interface ForgotPasswordPopupProps {
   isOpen: boolean;
@@ -191,7 +191,7 @@ const ForgotPasswordPopup: React.FC<ForgotPasswordPopupProps> = ({
                       ? `Gửi lại sau ${countdown}s`
                       : "Gửi yêu cầu"
                   }
-                    className="w-full"
+                  className="w-full"
                   type="submit"
                   disabled={isButtonDisabled}
                 />

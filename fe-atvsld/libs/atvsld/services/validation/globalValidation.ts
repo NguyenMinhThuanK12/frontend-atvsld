@@ -54,20 +54,45 @@ export const validateRole = async (
 
 // validate avatar upload
 export const validateImageFile = (
-  file: File
+  input: File | string
 ): { isValid: boolean; errorMessage?: string } => {
+  console.log("Validating image file:", input);
+  
   const validTypes = ["image/jpeg", "image/jpg", "image/png"];
-  if (!validTypes.includes(file.type)) {
-    return {
-      isValid: false,
-      errorMessage: "Chỉ hỗ trợ định dạng *.jpeg, *.jpg, *.png",
-    };
+  const validExtensions = [".jpeg", ".jpg", ".png"];
+
+  // Handle File input
+  if (input instanceof File) {
+    if (!validTypes.includes(input.type)) {
+      return {
+        isValid: false,
+        errorMessage: "Chỉ hỗ trợ định dạng *.jpeg, *.jpg, *.png",
+      };
+    }
+    if (input.size > 100 * 1024 * 1024) {
+      return {
+        isValid: false,
+        errorMessage: "Kích thước tệp tối đa là 100MB",
+      };
+    }
+    return { isValid: true };
   }
-  if (file.size > 100 * 1024 * 1024) {
-    return {
-      isValid: false,
-      errorMessage: "Kích thước tệp tối đa là 100MB",
-    };
+
+  // Handle string (URL) input
+  if (typeof input === "string") {
+    const lowerCaseInput = input.toLowerCase();
+    if (!validExtensions.some((ext) => lowerCaseInput.endsWith(ext))) {
+      return {
+        isValid: false,
+        errorMessage: "URL ảnh phải có định dạng *.jpeg, *.jpg hoặc *.png",
+      };
+    }
+    return { isValid: true }; // Assume URL is valid if extension matches
   }
-  return { isValid: true };
+
+  // Invalid input type
+  return {
+    isValid: false,
+    errorMessage: "Dữ liệu ảnh không hợp lệ",
+  };
 };

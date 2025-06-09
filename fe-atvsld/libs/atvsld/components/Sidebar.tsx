@@ -8,12 +8,16 @@ import Cookies from "js-cookie";
 import SidebarItem from "./SidebarItem";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 import { logout } from "@/libs/atvsld/services/api/authApi";
-import { useAuth } from "../services/context/AuthContext";
-import { permission } from "process";
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  menuItems: {name: string; href: string }[];
+}
+
+const Sidebar = (props: SidebarProps) => {
+  const { menuItems } = props;
   const [isSystemOpen, setIsSystemOpen] = useState(true);
   const [username, setUsername] = useState("");
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [alert, setAlert] = useState<{
     content: string;
     type: "success" | "error" | "warning" | "info";
@@ -22,40 +26,6 @@ const Sidebar: React.FC = () => {
   const searchParams = useSearchParams();
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const pathName = usePathname();
-
-  const AuthContextType = useAuth();
-  const permissions = AuthContextType.permissions;
-
-  const businessPermission =
-    permissions?.BUSINESS?.VIEW ||
-    permissions?.BUSINESS?.CREATE ||
-    permissions?.BUSINESS?.UPDATE ||
-    permissions?.BUSINESS?.DELETE ||
-    false;
-  const permissionPermission =
-    permissions?.PERMISSION?.VIEW ||
-    permissions?.PERMISSION?.CREATE ||
-    permissions?.PERMISSION?.UPDATE ||
-    permissions?.PERMISSION?.DELETE ||
-    false;
-  const rolePermission =
-    permissions?.ROLE?.VIEW ||
-    permissions?.ROLE?.CREATE ||
-    permissions?.ROLE?.UPDATE ||
-    permissions?.ROLE?.DELETE ||
-    false;
-  const userPermission =
-    permissions?.USER?.VIEW ||
-    permissions?.USER?.CREATE ||
-    permissions?.USER?.UPDATE ||
-    permissions?.USER?.DELETE ||
-    false;
-  const reportPermission =
-    permissions?.REPORT?.VIEW ||
-    permissions?.REPORT?.CREATE ||
-    permissions?.REPORT?.UPDATE ||
-    permissions?.REPORT?.DELETE ||
-    false;
 
   const showAlert = useCallback(
     (
@@ -69,58 +39,6 @@ const Sidebar: React.FC = () => {
     },
     []
   );
-
-  const menuItems = useMemo(() => {
-    const items = [
-      businessPermission && {
-        name: "Quản lý doanh nghiệp",
-        href: "/dashboard/businesses",
-      },
-      permissionPermission && {
-        name: "Phân quyền",
-        href: "/dashboard/permissions",
-      },
-      rolePermission && {
-        name: "Vai trò",
-        href: "/dashboard/roles",
-      },
-      userPermission && {
-        name: "Người dùng",
-        href: "/dashboard/users",
-      },
-      reportPermission && {
-        name: "Báo cáo ATVSLĐ",
-        href: "/dashboard/reports",
-      },
-    ];
-    return items.filter(Boolean) as { name: string; href: string }[];
-  }, [
-    businessPermission,
-    permissionPermission,
-    rolePermission,
-    userPermission,
-    reportPermission,
-  ]);
-
-  // const menuItems = useMemo(
-  //   () => [
-  //     {
-  //       name: "Quản lý doanh nghiệp",
-  //       href: "/dashboard/businesses",
-  //     },
-  //     {
-  //       name: "Phân quyền",
-  //       href: "/dashboard/permissions",
-  //     },
-  //     { name: "Vai trò", href: "/dashboard/roles" },
-  //     { name: "Người dùng", href: "/dashboard/users" },
-  //     {
-  //       name: "Báo cáo ATVSLĐ",
-  //       href: "/dashboard/reports",
-  //     },
-  //   ],
-  //   []
-  // );
 
   // console.log("Menu Items:", menuItems);
 
@@ -138,6 +56,13 @@ const Sidebar: React.FC = () => {
       setUsername(storedFullName || "Không xác định");
     }
   }, [username]);
+
+  useEffect(() => {
+    const storedAvatar = Cookies.get("avatar");
+    if (storedAvatar) {
+      setAvatar(storedAvatar || "/img/default-avatar.png");
+    }
+  }, [avatar]);
 
   useEffect(() => {
     const currentPath = pathName;
@@ -177,7 +102,7 @@ const Sidebar: React.FC = () => {
     }
 
     // Xóa các Cookies cụ thể
-    ["accessToken", "refreshToken", "fullName", "departmentId"].forEach(
+    ["accessToken", "refreshToken", "fullName", "avatar", "userType"].forEach(
       (cookieName) => {
         Cookies.remove(cookieName, { path: "/" });
       }
@@ -238,7 +163,7 @@ const Sidebar: React.FC = () => {
           <div className="mt-2">
             {menuItems.length > 0 &&
               menuItems
-                .filter((item): item is { name: string; href: string } =>
+              .filter((item): item is { name: string; href: string } =>
                   Boolean(item)
                 )
                 .map((item) => (
@@ -261,7 +186,7 @@ const Sidebar: React.FC = () => {
           <div className="flex items-center justify-between w-full relative">
             <div className="flex items-center justify-start space-x-2 py-2 shadow-xl">
               <img
-                src="/img/default-avatar.jpg"
+                src={avatar || "/img/default-avatar.png"}
                 alt="avatar"
                 className="w-12 h-12 rounded-full"
               />

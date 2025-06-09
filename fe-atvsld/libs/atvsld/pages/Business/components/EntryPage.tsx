@@ -72,13 +72,8 @@ const EntryPage = (props: EntryPageProps) => {
 
   // handle file upload
   const handleFileUpload = (id: number, file: File | null) => {
-    id === 1 && file
-      ? setValue("businessLicenseFile", file)
-      : setValue("businessLicenseFile", null);
-
-    id === 2 && file
-      ? setValue("otherDocumentFile", file)
-      : setValue("otherDocumentFile", null);
+    const field = id === 1 ? "businessLicenseFile" : "otherDocumentFile";
+    setValue(field, file);
   };
 
   // Debounced check functions
@@ -322,11 +317,12 @@ const EntryPage = (props: EntryPageProps) => {
               render={({ field }) => (
                 <PrimaryTextField
                   label={renderLabelWithAsterisk(
-                    "Tên doanh nghiệp (tiếng nước ngoài)",
+                    "Tên viết bằng tiếng nước ngoài",
                     false
                   )}
                   size="small"
                   value={field.value || ""}
+                  onChange={field.onChange}
                   error={!!errors.foreignName}
                   helperText={errors.foreignName?.message}
                 />

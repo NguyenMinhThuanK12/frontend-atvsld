@@ -6,19 +6,24 @@ import CustomizedDataGrid, {
   ColumnConfig,
 } from "@/libs/core/components/Table/CustomizedDataGrid";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
-import { getUsers } from "../../services/api/userApi";
 import { UserType } from "@/libs/shared/core/enums/userType";
-import { Business } from "@/libs/shared/atvsld/models/business.model";
-import { Role } from "@/libs/shared/atvsld/models/role.model";
-import { getBusinesses } from "../../services/api/businessApi";
-import { getRoles } from "../../services/api/roleApi";
 import UserDetail from "./popup/user-detail";
 import { fetchBusinesses } from "../../components/BusinessFeature/handleBusinessFeatures";
 import { fetchRoles } from "../../components/RoleFeature/handleRoleFeatures";
 import { userTypeOptions } from "../../utils/fetchEnum";
-import { useAuth } from "../../services/context/AuthContext";
 
-interface UserRow {
+import {
+  deleteUserFeature,
+  filterUsersFeature,
+  getAllUsersFeature,
+  resetUserPasswordFeature,
+  toggleUserStatusFeature,
+} from "../../components/UserFeature/handleUserFeatures";
+import { HandleGetLabelByValue } from "../../utils/commonFunction";
+import { User } from "@/libs/shared/atvsld/models/user.model";
+import { handleGetPermissions } from "../../components/AuthFeature/handleAuthFeature";
+
+export interface UserRow {
   id: string;
   fullName: string;
   username: string;
@@ -30,8 +35,22 @@ interface UserRow {
 }
 
 export default function UserPage() {
-  // set permissions in this layout
-  const permissions = useAuth().permissions;
+  // get permissions from context
+  const userPermission = handleGetPermissions().userPermission;
+    const canView = userPermission[0];
+    const canCreate = userPermission[1];
+    const canUpdate = userPermission[2];
+    const canDelete = userPermission[3];
+    if (!canView && !canCreate && !canUpdate && !canDelete) {
+      return (
+        <div className="container w-full flex flex-col items-center justify-center h-full">
+          <h1 className="text-2xl font-bold text-gray-700">
+            Bạn không có quyền truy cập vào trang này.
+          </h1>
+        </div>
+      );
+    }
+
 
   // data rows send to CustomizedDataGrid
   const [dataRows, setDataRows] = useState<UserRow[]>([]);
@@ -44,10 +63,9 @@ export default function UserPage() {
   >([]);
   const [roleOptions, setRoleOptions] = useState<
     { value: string; label: string }[]
-    >([]);
+  >([]);
   // handle select rows for deleting
   const [selectedRows, setSelectedRows] = useState<UserRow[]>([]);
-
 
   // notify
   const [alert, setAlert] = useState<{
@@ -60,12 +78,56 @@ export default function UserPage() {
     content: string,
     type: "success" | "error" | "info" | "warning",
     duration: number = 2000 // default 2 seconds
-  ) => {
-    setAlert({ content, type, duration });
+  ) => setAlert({ content, type, duration });
+
+  useEffect(() => {
+    if (businessOptions.length === 0 && roleOptions.length === 0) return;
+    handleGetAll();
+  }, [businessOptions, roleOptions]);
+
+  const convertToUserRows = (users: User[]): UserRow[] => {
+    return users.map((user) => ({
+      id: user.id,
+      fullName: user.fullName,
+      username: user.username,
+      userType: user.userType,
+      businessId:
+        user.businessId !== null
+          ? HandleGetLabelByValue(user.businessId, businessOptions)
+          : null,
+      roleId:
+        user.roleId !== null
+          ? HandleGetLabelByValue(user.roleId, roleOptions)
+          : null,
+      jobTitle: user.jobTitle,
+      isActive: user.isActive,
+    }));
+  };
+
+  // handle get all users
+  const handleGetAll = async () => {
+    try {
+      const response = await getAllUsersFeature();
+      if (!response) {
+        showAlert("Không có người dùng nào được tìm thấy.", "info", 5000);
+        return;
+      }
+
+      const rows: UserRow[] = convertToUserRows(response);
+      setDataRows(rows);
+    } catch (error) {
+      console.error("Error refreshing users:", error);
+      showAlert(
+        "Có lỗi xảy ra khi làm mới danh sách người dùng.",
+        "error",
+        2000
+      );
+    }
   };
 
   // fetch businesses and roles for filter box
   useEffect(() => {
+    if (roleOptions.length > 0 && businessOptions.length > 0) return;
     let isMounted = true;
     (async () => {
       const businessesList = await fetchBusinesses();
@@ -142,13 +204,79 @@ export default function UserPage() {
     },
   ];
 
+  // handle filter change
   const [filters, setFilters] = useState<Record<string, string>>({});
   const handleFilterChange = (field: string, value: string) => {
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      [field]: value,
-    }));
+    const updatedFilters = { ...filters };
+
+    value ? (updatedFilters[field] = value) : delete updatedFilters[field];
+
+    setFilters(updatedFilters);
   };
+
+  useEffect(() => {
+    const applyFilters = async () => {
+      try {
+        const filteredUsers = await filterUsersFeature(filters);
+        if (filteredUsers) {
+          const rows: UserRow[] = convertToUserRows(filteredUsers);
+          setDataRows(rows);
+          if (rows.length === 0) {
+            showAlert(
+              "Không tìm thấy người dùng phù hợp với điều kiện lọc.",
+              "warning",
+              5000
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error applying filters:", error);
+        showAlert("Có lỗi xảy ra khi áp dụng bộ lọc.", "error");
+      }
+    };
+
+    applyFilters();
+  }, [filters]);
+
+  // handle status change
+  const handleStatusChange = async (rowId: string, newStatus: boolean) => {
+    try {
+      const updatedStatus = await toggleUserStatusFeature(rowId, newStatus);
+
+      if (!updatedStatus) {
+        console.error("Không thể cập nhật trạng thái người dùng.");
+        
+      }
+      showAlert(
+        `Trạng thái người dùng đã được ${
+          newStatus ? "kích hoạt" : "vô hiệu hóa"
+        }.`,
+        "success"
+      );
+      handleGetAll(); // Refresh data after status change
+    } catch (error) {
+      showAlert(
+        error instanceof Error ? error.message : "Có lỗi xảy ra khi cập nhật trạng thái người dùng.",
+        "error"
+      );
+    }
+    
+  }
+
+  // handle reset password
+  const handleResetPassword = async (rowId: string) => {
+    try {
+      const response = await resetUserPasswordFeature(rowId);
+      if (response) {
+        showAlert("Mật khẩu được khôi phục là: Abcd1@34.", "success");
+      } else {
+        showAlert("Không thể đặt lại mật khẩu cho người dùng này.", "error");
+      }
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      showAlert("Có lỗi xảy ra khi đặt lại mật khẩu.", "error");
+    }
+  }
 
   const handleDisplayCreationPopup = () => {
     setOpenModal(true);
@@ -158,13 +286,41 @@ export default function UserPage() {
   const handleDisplayEditPopup = (row: UserRow) => {
     setOpenModal(true);
     setId(row.id);
-  }
+  };
+
+  const handleRefreshData = () => {
+    setOpenModal(false);
+    handleGetAll();
+    showAlert(
+      id ? "Cập nhật người dùng thành công" : "Thêm mới người dùng thành công",
+      "success"
+    );
+    setId("");
+  };
+
+  const handleDeleteSelectedRows = async () => {
+    try {
+      const deleted = await deleteUserFeature(selectedRows);
+
+      if (!deleted) {
+        showAlert("Không thể xóa doanh nghiệp đã chọn.", "error");
+        return;
+      }
+
+      setSelectedRows([]);
+      handleGetAll();
+      showAlert("Xóa người dùng thành công.", "success");
+    } catch (error) {
+      console.error("Error deleting users:", error);
+      showAlert("Có lỗi xảy ra khi xóa tài khoản.", "error");
+    }
+  };
 
   return (
     <div className="w-full h-full px-2">
       <Header
         title="Danh sách người dùng"
-        creationPermission={true}
+        creationPermission={canCreate}
         hasImport={true}
         hasExport={true}
         onAddNewClick={handleDisplayCreationPopup}
@@ -176,10 +332,16 @@ export default function UserPage() {
           onRowSelectionChange={(selectedData: UserRow[]) =>
             setSelectedRows(selectedData)
           }
-          hasEdit={true}
+          hasEdit={canUpdate}
+          onEdit={handleDisplayEditPopup}
           hasView={false}
+          hasDelete={canDelete}
+          onDelete={handleDeleteSelectedRows}
           filters={filters}
           onFilterChange={handleFilterChange}
+          onStatusChange={handleStatusChange}
+          hasResetPassword={true}
+          onResetPassword={handleResetPassword}
         />
       </div>
       <UserDetail
@@ -188,7 +350,8 @@ export default function UserPage() {
           setOpenModal(false);
           setId("");
         }}
-        idSelected={id}
+        onSave={handleRefreshData}
+        selectedId={id}
       />
       {alert && (
         <Alert

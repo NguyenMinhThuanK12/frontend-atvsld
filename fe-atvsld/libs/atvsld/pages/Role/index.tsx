@@ -11,6 +11,7 @@ import { deleteRole, filterRoles, getRoles } from "../../services/api/roleApi";
 import { QueryRoleRequest } from "@/libs/shared/atvsld/dto/request/role/queryRoleRequest";
 import { Role } from "@/libs/shared/atvsld/models/role.model";
 import RoleDetail from "./popup/role-detail";
+import { handleGetPermissions } from "../../components/AuthFeature/handleAuthFeature";
 
 interface RoleRow {
   id: string;
@@ -19,6 +20,22 @@ interface RoleRow {
 }
 
 export default function RolePage() {
+  // get permissions from context
+  const rolePermission = handleGetPermissions().rolePermission;
+  const canView = rolePermission[0];
+  const canCreate = rolePermission[1];
+  const canUpdate = rolePermission[2];
+  const canDelete = rolePermission[3];
+  if (!canView && !canCreate && !canUpdate && !canDelete) {
+    return (
+      <div className="container w-full flex flex-col items-center justify-center h-full">
+        <h1 className="text-2xl font-bold text-gray-700">
+          Bạn không có quyền truy cập vào trang này.
+        </h1>
+      </div>
+    );
+  }
+
   const query = useSearchParams();
 
   useEffect(() => {
@@ -158,7 +175,6 @@ export default function RolePage() {
     console.log("Selected rows:", selectedData);
   }, []);
 
-
   const handleDisplayUpdatePage = useCallback((row: RoleRow) => {
     setId(row.id);
     setOpenModal(true);
@@ -194,11 +210,21 @@ export default function RolePage() {
     }
   };
 
+  const handleRefreshData = () => {
+    setOpenModal(false);
+    fetchData();
+    showAlert(
+      id ? "Cập nhật vai trò thành công" : "Thêm mới vai trò thành công",
+      "success"
+    );
+    setId("");
+  };
+
   return (
     <div className="container w-full flex flex-col items-center justify-between h-full">
       <Header
         title="Danh Sách Vai Trò"
-        creationPermission={true}
+        creationPermission={canCreate}
         hasAddNew={true}
         onAddNewClick={handleDisplayCreatePage}
       />
@@ -210,6 +236,7 @@ export default function RolePage() {
           onRowSelectionChange={handleRowSelection}
           onFilterChange={handleFilterChange}
           filters={filters}
+          hasEdit={canUpdate}
           onEdit={handleDisplayUpdatePage}
           hasStatus={false}
           hasView={false}
@@ -220,11 +247,12 @@ export default function RolePage() {
       {/* Role Detail Popup */}
       <RoleDetail
         openModal={openModal}
-        idSelected={id}
+        selectedId={id}
         onClose={() => {
           setOpenModal(false);
           setId("");
         }}
+        onSave={handleRefreshData}
       />
 
       {/* Alert */}

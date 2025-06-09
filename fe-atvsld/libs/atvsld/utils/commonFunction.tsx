@@ -49,3 +49,18 @@ export const extractFileName = (file?: File | string | null) => {
   const nameParts = fileName.split("pdf");
   return nameParts[0].trim() + ".pdf";
 };
+
+
+export const HandleGetLabelByValue= (
+  id: string,
+  options: { value: string; label: string }[]
+): string => {
+  const opt = options.find(
+    (o: { value: string; label: string }) => o.value === id
+  );
+  if (!opt) {
+    console.warn(`Business with ID ${id} not found`);
+    return "";
+  }
+  return opt.label;
+};

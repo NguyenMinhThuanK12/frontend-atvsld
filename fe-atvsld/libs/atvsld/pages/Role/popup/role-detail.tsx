@@ -24,12 +24,12 @@ import React, { useCallback, useEffect, useState } from "react";
 interface RoleDetailProps {
   openModal: boolean;
   onClose?: () => void;
-  onSave?: () => void;
-  idSelected?: string;
+  onSave: () => void;
+  selectedId?: string;
 }
 
 export default function RoleDetail(props: RoleDetailProps) {
-  const { openModal, onClose, onSave, idSelected } = props;
+  const { openModal, onClose, onSave, selectedId } = props;
   const [value, setValue] = useState<Role>();
   const [filteredPermissionRows, setFilteredPermissionRows] = useState<
     GroupPermissionRow[]
@@ -45,6 +45,7 @@ export default function RoleDetail(props: RoleDetailProps) {
   const [roleCodeHelperText, setRoleCodeHelperText] = useState<string>("");
   const [roleCodeError, setRoleCodeError] = useState<boolean>(false);
   const [roleNameError, setRoleNameError] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   // notify
   const [alert, setAlert] = useState<{
@@ -68,8 +69,8 @@ export default function RoleDetail(props: RoleDetailProps) {
   // handle get by id for edit
   useEffect(() => {
     const fetchData = async () => {
-      if (idSelected) {
-        await getDetail(idSelected);
+      if (selectedId) {
+        await getDetail(selectedId);
       }
       else {
         setValue({
@@ -82,7 +83,7 @@ export default function RoleDetail(props: RoleDetailProps) {
       }
     };
     fetchData();
-  }, [idSelected]);
+  }, [selectedId]);
 
   const getDetail = async (id: string) => {
     try {
@@ -180,54 +181,65 @@ export default function RoleDetail(props: RoleDetailProps) {
   };
 
   // handle create
-  const handleCreate = async (role: CreationRoleRequest) => {
+  const handleCreate = async (role: CreationRoleRequest): Promise<Boolean> => {
     try {
       const response = await createRole(role);
       if (response.status !== 201 || !response.data) {
         showAlert("Không thể tạo vai trò mới", "error");
-        return;
+        return false;
       }
-      showAlert("Tạo vai trò thành công", "success");
+      return true
     } catch (error) {
       console.error("Error creating role:", error);
-      showAlert("Lỗi khi tạo vai trò", "error");
+      showAlert("Lỗi khi tạo vai trò mới", "error");
+      return false;
     }
   };
 
   // Handle update
-  const handleUpdate = async (role: UpdateRoleRequest, id: string) => {
+  const handleUpdate = async (
+    role: UpdateRoleRequest,
+    id: string
+  ): Promise<Boolean> => {
     try {
       const response = await updateRole(id, role);
       if (response.status !== 200 || !response.data) {
         showAlert(response.message || "Không thể cập nhật vai trò", "error");
-        return;
+        return false;
       }
-      showAlert("Cập nhật vai trò thành công", "success");
+      return true;
     } catch (error) {
       console.error("Error updating role:", error);
       showAlert("Lỗi khi cập nhật vai trò", "error");
+      return false;
     }
   };
 
   // Handle submit
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const isValid = validateRole();
     if (!isValid) {
       return; // Stop submission if validation fails
     }
-    idSelected
-      ? handleUpdate(
+    setLoading(true);
+    const success = selectedId
+      ? await handleUpdate(
           {
             name: value?.name || "",
             permissionIds: selectedPermissions,
           },
-          idSelected
+          selectedId
         )
-      : handleCreate({
+      : await handleCreate({
           code: value?.code || "",
           name: value?.name || "",
           permissionIds: selectedPermissions,
-        });
+      });
+    setLoading(false);
+    if (success) {
+      onSave(); // Call onSave callback if provided
+    }
+    
   };
 
   return (
@@ -248,7 +260,7 @@ export default function RoleDetail(props: RoleDetailProps) {
         <DialogTitle id="alert-dialog-title">
           <div className="flex items-center justify-between w-full">
             <h1 className="text-black font-semibold text-2xl">
-              {idSelected ? "Chỉnh sửa vai trò" : "Thêm mới vai trò" }
+              {selectedId ? "Chỉnh sửa vai trò" : "Thêm mới vai trò" }
             </h1>
             <button
               className="p-2 flex items-center justify-center cursor-pointe hover:bg-gray-50 rounded-full"
@@ -290,7 +302,7 @@ export default function RoleDetail(props: RoleDetailProps) {
                 prev
                   ? { ...prev, code: e.target.value }
                   : {
-                      id: idSelected ?? "",
+                      id: selectedId ?? "",
                       code: e.target.value,
                       name: "",
                       permissionIds: [],
@@ -299,7 +311,7 @@ export default function RoleDetail(props: RoleDetailProps) {
             }}
             error={roleCodeError}
             helperText={roleCodeHelperText}
-            disabled={idSelected !== ""} // Disable input in edit mode
+            disabled={selectedId !== ""} // Disable input in edit mode
           />
 
           <PrimaryTextField

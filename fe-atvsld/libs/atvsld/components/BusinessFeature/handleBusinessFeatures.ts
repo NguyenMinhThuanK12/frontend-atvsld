@@ -5,6 +5,7 @@ import {
   createBusiness,
   deleteBusiness,
   filterBusinesses,
+  getActiveBusinesses,
   getBusinesses,
   updateBusiness,
   updateBusinessStatus,
@@ -54,6 +55,21 @@ export const fetchBusinesses = async () => {
     console.error("Error fetching businesses:", error);
   }
 };
+
+export const fetchActiveBusinesses = async () => {
+  try {
+    const response = await getActiveBusinesses();
+    if (!response || response.length === 0) {
+      console.log("Không có doanh nghiệp nào được tìm thấy", "info");
+      return;
+    }
+    
+    return response;
+  } catch (error) {
+    console.error("Error fetching active businesses:", error);
+  }
+}
+
 
 export const applyFilters = async (filters: Record<string, string>) => {
   try {
@@ -250,4 +266,16 @@ export const handleUpdateBusiness = async (business: Business): Promise<Boolean>
     console.error("Error updating business:", error);
     return false;
   }
+}
+
+export const getBusinessNameByIdFeature = (
+  id: string,
+  businessOptions: { value: string; label: string }[]
+): string => {
+  const business = businessOptions.find((b: { value: string; label: string }) => b.value === id);
+  if (!business) {
+    console.warn(`Business with ID ${id} not found`);
+    return "";
+  }
+  return business.label;
 }

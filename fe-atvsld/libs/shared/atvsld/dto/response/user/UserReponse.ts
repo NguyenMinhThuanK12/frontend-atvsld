@@ -3,24 +3,25 @@ import { UserType } from "@/libs/shared/core/enums/userType";
 
 export interface UserResponse {
   id: string;
-  account: string;
+  username: string;
   password: string;
-  full_name: string;
-  job_title: string;
-  user_type?: UserType;
-  business: { id: string; name: string } | null;
-  role: { id: string; name: string } | null;
+  fullName: string;
+  jobTitle: string;
+
+  userType: UserType;
+  roleId: string | null;
+  businessId: string | null;
+
   email: string;
-
-  birthday?: Date;
+  phoneNumber: string;
+  birthday?: Date | null;
   gender?: Gender;
-  phone?: string;
 
-  is_active: boolean;
+  province?: string | null;
+  district?: string | null;
+  ward?: string | null;
+  address?: string | null;
+
   avatar?: string | File | null;
-
-  province?: string;
-  district?: string;
-  ward?: string;
-  address?: string;
+  is_active: boolean;
 }

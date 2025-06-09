@@ -12,11 +12,12 @@ export interface User {
   roleId: string | null;
   email: string;
   phoneNumber: string;
-  birthday?: Date;
-  gender?: Gender;
-  province?: string;
-  district?: string;
-  ward?: string;
-  address?: string;
-  avatar?: string | File;
+  birthday?: Date | null;
+  gender?: Gender | null;
+  province?: string | null;
+  district?: string | null;
+  ward?: string | null;
+  address?: string | null;
+  avatar?: string | File | null;
+  isActive: boolean;
 }

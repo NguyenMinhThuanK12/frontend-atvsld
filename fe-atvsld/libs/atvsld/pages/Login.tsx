@@ -18,7 +18,9 @@ import {
 import { login } from "../services/api/authApi";
 import { AuthenticationRequest } from "@/libs/shared/atvsld/dto/request/auth-request";
 import { CircularProgress } from "@mui/material";
-import { useAuth } from "../services/context/AuthContext";
+import { renderLabelWithAsterisk } from "../utils/commonFunction";
+import { UserType } from "@/libs/shared/core/enums/userType";
+import { useAuth } from "@/libs/core/hooks/AuthContext";
 const ForgotPasswordPopup = dynamic(
   () => import("@/libs/atvsld/components/ForgotPasswordPopup"),
   {
@@ -26,13 +28,15 @@ const ForgotPasswordPopup = dynamic(
   }
 );
 
-export default function Login() {
+export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [usernameError, setUsernameError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [loading, setLoading] = useState(false); // Add loading state
   const { setAuthData } = useAuth(); // Import the context to set auth data
 
@@ -42,20 +46,11 @@ export default function Login() {
     duration: number;
   } | null>(null);
 
-  const searchParams = useSearchParams();
-  const router = useRouter();
-
-  const showAlert = useCallback(
-    (
-      content: string,
-      type: "success" | "error" | "warning" | "info",
-      duration = 2000
-    ) => {
-      setAlert({ content, type, duration });
-      setTimeout(() => setAlert(null), duration);
-    },
-    []
-  );
+  const showAlert = (
+    content: string,
+    type: "success" | "error" | "warning" | "info",
+    duration = 2000
+  ) => setAlert({ content, type, duration });
 
   useEffect(() => {
     const logoutStatus = searchParams.get("logout");
@@ -64,12 +59,12 @@ export default function Login() {
     } else if (logoutStatus === "forced") {
       showAlert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", "error");
     }
-  }, [searchParams]);
+  }, []);
 
   // handle login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true); // Set loading state to true
+    setLoading(true);
 
     const fields = {
       username: {
@@ -117,6 +112,7 @@ export default function Login() {
       const response = await login(loginRequest); // send login request
 
       if (response.status !== 200 || !response.data) {
+        setLoading(false);
         showAlert(response.message, "error");
         return;
       }
@@ -125,7 +121,8 @@ export default function Login() {
       const refresh_token = response.data.refresh_token;
       const userAuthenticated = response.data.userAuthenticated;
       const fullName = userAuthenticated.full_name;
-      const permissions = userAuthenticated.permissions;
+      const avatar = userAuthenticated.avatar || "/img/default-avatar.png"; // Default avatar if not provided
+      
 
       Cookies.set("accessToken", access_token, {
         expires: rememberMe ? 7 : undefined,
@@ -143,34 +140,48 @@ export default function Login() {
         secure: true,
         sameSite: "Strict",
       });
+      Cookies.set("avatar", avatar, {
+        expires: rememberMe ? 7 : undefined,
+        secure: true,
+        sameSite: "Strict",
+      });
+      Cookies.set("userType", userAuthenticated.user_type, {
+        expires: rememberMe ? 7 : undefined,
+        secure: true,
+        sameSite: "Strict",
+      });
 
       // Store permissions in context
-      setAuthData(permissions);
-
-
-      const redirect = "/dashboard/greeting";
-      setLoading(false); // Reset loading state
-      router.push(redirect + "?login=success");
+      // setAuthData(permissions);
+      const userType = userAuthenticated.user_type;
+      let redirectPath = "";
+      if (userType === UserType.ADMIN) {
+        redirectPath = "/dashboard/greeting";
+        const permissions = userAuthenticated.permissions;
+        setAuthData(permissions); // Set permissions in context
+      } else {
+        redirectPath = "/reports";
+        setAuthData(null); 
+      } 
+      setLoading(false);
+      router.push(redirectPath + "?login=success");
     } catch (error) {
+      setLoading(false);
+      console.error("Login error:", error);
       showAlert("Có lỗi xảy ra trong quá trình đăng nhập.", "error");
     }
   };
 
   // remember me - auto login when cookies are not expired
-  useEffect(() => {
-    const token = Cookies.get("accessToken");
-    if (token) {
-      const redirect = "/dashboard/greeting";
-      router.push(redirect);
-    }
-  }, [router]);
+  // useEffect(() => {
+  //   const token = Cookies.get("accessToken");
+  //   const user_type = Cookies.get("userType");
 
-  const renderLabelWithAsterisk = (label: string, required: boolean) => (
-    <span>
-      {label}
-      {required && <span style={{ color: "red" }}> *</span>}
-    </span>
-  );
+  //   if (!token || !user_type) return;
+  //   const redirect =
+  //     user_type === UserType.ADMIN ? "/dashboard/greeting" : "/reports";
+  //   router.push(redirect);
+  // }, [router]);
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">

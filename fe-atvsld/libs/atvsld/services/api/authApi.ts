@@ -3,7 +3,7 @@ import { ApiResponse } from "@/libs/shared/atvsld/dto/response/api-response";
 import { AuthenticationResponse } from "@/libs/shared/atvsld/dto/response/auth/auth-response";
 import { AuthenticationRequest } from "@/libs/shared/atvsld/dto/request/auth-request";
 import { isAxiosError } from "axios";
-import { ForgotPasswordRequest } from "@/libs/shared/atvsld/dto/response/auth/forgotPassword-request";
+import { ForgotPasswordRequest } from "@/libs/shared/atvsld/dto/request/forgotPassword-request";
 
 export const login = async (
   authRequest: AuthenticationRequest
