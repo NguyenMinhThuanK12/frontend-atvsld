@@ -13,6 +13,7 @@ interface PrimarySelectFieldProps {
   error?: boolean;
   helperText?: string | React.ReactNode;
   size?: "small" | "medium";
+  sx?: React.CSSProperties; // Uncomment if you want to allow custom styles
 }
 
 const PrimarySelectField: React.FC<PrimarySelectFieldProps> = ({
@@ -29,7 +30,7 @@ const PrimarySelectField: React.FC<PrimarySelectFieldProps> = ({
   if (!options) {
     throw new Error("Options is required for select field");
   }
-
+  
   return (
     <TextField
       select
@@ -48,9 +49,9 @@ const PrimarySelectField: React.FC<PrimarySelectFieldProps> = ({
           MenuProps: {
             PaperProps: {
               sx: {
-                maxHeight: 200, // Giới hạn chiều cao dropdown
-                overflowY: "auto", // Thêm thanh cuộn
-                marginTop: 1, // Khoảng cách nhỏ giữa input và dropdown
+                maxHeight: 200,
+                overflowY: "auto",
+                marginTop: 1,
               },
             },
             anchorOrigin: {
@@ -65,7 +66,6 @@ const PrimarySelectField: React.FC<PrimarySelectFieldProps> = ({
         },
       }}
       sx={{
-        // marginBottom: "1.5rem",
         "& .MuiOutlinedInput-root": {
           "& fieldset": {
             borderColor: error ? "red" : disabled ? "#e5e7eb" : "#d1d5db",

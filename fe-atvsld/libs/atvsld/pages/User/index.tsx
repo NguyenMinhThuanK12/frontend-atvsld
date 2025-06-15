@@ -78,7 +78,10 @@ export default function UserPage() {
     content: string,
     type: "success" | "error" | "info" | "warning",
     duration: number = 2000 // default 2 seconds
-  ) => setAlert({ content, type, duration });
+  ) => {
+    setAlert({ content, type, duration });
+    setTimeout(() => setAlert(null), duration);
+  }
 
   useEffect(() => {
     if (businessOptions.length === 0 && roleOptions.length === 0) return;
@@ -109,7 +112,7 @@ export default function UserPage() {
     try {
       const response = await getAllUsersFeature();
       if (!response) {
-        showAlert("Không có người dùng nào được tìm thấy.", "info", 5000);
+        showAlert("Không có người dùng nào được tìm thấy.", "info", 2000);
         return;
       }
 

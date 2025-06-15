@@ -77,7 +77,7 @@ const loadComponentPermissions = async (
 };
 
 // Fetch data
-const fetchData = async () => {
+export const fetchData = async () => {
   const groupPermissions = await fetchGroupPermissions();
   if (groupPermissions) {
     const result = await loadComponentPermissions(groupPermissions);
@@ -88,7 +88,6 @@ const fetchData = async () => {
   }
 };
 
-export const PermissionData = fetchData();
 
 
 export const isDuplicateRoleCode = async (code: string): Promise<boolean> => {

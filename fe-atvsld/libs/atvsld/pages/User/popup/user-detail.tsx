@@ -48,12 +48,12 @@ import { debounce, set } from "lodash";
 import {
   checkDuplicateUsername,
   checkEmailDuplicate,
+  checkPhoneNumberDuplicate,
 } from "@/libs/atvsld/services/api/userApi";
 import {
   mappingUserToCreationUserRequest,
   mappingUserToUpdateUserRequest,
 } from "@/libs/shared/atvsld/mapping/UserMapping";
-import ConfirmationDialog from "@/libs/core/components/Dialog/ConfirmationDialog";
 import { Business } from "@/libs/shared/atvsld/models/business.model";
 
 interface UserDetailProps {
@@ -121,6 +121,9 @@ export function UserDetail(props: UserDetailProps) {
   const province = watch("province");
   const district = watch("district");
   const businessId = watch("businessId");
+  const email = watch("email");
+  const username = watch("username");
+  const phoneNumber = watch("phoneNumber");
 
   // notify
   const [alert, setAlert] = useState<{
@@ -218,7 +221,7 @@ export function UserDetail(props: UserDetailProps) {
         clearErrors("username");
       }
     }, 1000),
-    [setError, clearErrors, showAlert, selectedId]
+    []
   );
 
   const debouncedCheckEmail = useCallback(
@@ -237,13 +240,52 @@ export function UserDetail(props: UserDetailProps) {
         clearErrors("email");
       }
     }, 1000),
-    [setError, clearErrors]
+    []
+  );
+
+  const debouncedCheckPhoneNumber = useCallback(
+    debounce(async (phoneNumber: string, id?: string) => {
+      if (!phoneNumber) {
+        clearErrors("phoneNumber");
+        return;
+      }
+      
+      const isDuplicate = await checkPhoneNumberDuplicate(phoneNumber, id); 
+      if (isDuplicate) {
+        setError("phoneNumber", {
+          type: "manual",
+          message: "Số điện thoại đã tồn tại",
+        });
+      } else {
+        clearErrors("phoneNumber");
+      }
+    }, 1000),
+    []
   );
 
   const handleToggleActiveStatus = () => {
     setIsActive(!isActive);
     setValue("isActive", !isActive);
   };
+
+  // check email and username duplicate immediately if not editing
+  useEffect(() => {
+    if (selectedId) return; // Skip duplicate checks if editing
+    if (username) {
+      debouncedCheckUsername(username);
+    }
+    if (email) {
+      console.log("Checking email:", email);
+      
+      debouncedCheckEmail(email);
+    }
+  }, [username, email]);
+
+  // useEffect(() => {
+  //   if (phoneNumber) {      
+  //     debouncedCheckPhoneNumber(phoneNumber);
+  //   }
+  // }, [phoneNumber]);
 
   // handle create user
   const handleCreateUser = async (data: User) => {
@@ -268,7 +310,7 @@ export function UserDetail(props: UserDetailProps) {
       setLoading(false);
       console.error("Error updating user:", error);
       showAlert(
-        "Lỗi khi cập nhật người dùng. Vui lòng thử lại.",
+        String(error),
         "error",
         2000
       );
@@ -291,6 +333,7 @@ export function UserDetail(props: UserDetailProps) {
 
     setLoading(false);
     if (success) {
+      reset(defaultUser); // Reset form to default values
       setAvatarPreview(null); // Reset avatar preview after save
       onSave();
     }
@@ -373,7 +416,7 @@ export function UserDetail(props: UserDetailProps) {
                                 onClick={() => setIsLargerAvatar(true)}
                                 aria-label="View full-size avatar"
                               />
-                              <Trash2
+                              {/* <Trash2
                                 className="w-6 h-6 text-white cursor-pointer ml-2 hover:text-blue-500"
                                 onClick={() => {
                                   field.onChange(null);
@@ -383,7 +426,7 @@ export function UserDetail(props: UserDetailProps) {
                                   ) as HTMLInputElement;
                                   if (input) input.value = "";
                                 }}
-                              />
+                              /> */}
                             </div>
                           </div>
                         ) : (
@@ -706,7 +749,13 @@ export function UserDetail(props: UserDetailProps) {
                     label={renderLabelWithAsterisk("Số điện   thoại", false)}
                     size="small"
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                      console.log("Phone Number Changed:", e.target.value);
+                      console.log("Selected ID:", selectedId);
+                      
+                      // debouncedCheckPhoneNumber(e.target.value, selectedId ? selectedId : undefined);
+                    }}
                     error={!!errors.phoneNumber}
                     helperText={errors.phoneNumber?.message}
                   />

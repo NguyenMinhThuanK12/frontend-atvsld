@@ -16,7 +16,6 @@ import {
   newDistrictOptions,
   newWardOptions,
 } from "../../utils/fetchProvinceJson";
-import { get } from "lodash";
 import { handleGetPermissions } from "../../components/AuthFeature/handleAuthFeature";
 
 export interface BusinessRow {
@@ -278,7 +277,7 @@ export default function BusinessPage() {
         hasStatus={true}
         hasView={canView}
         hasEdit={canUpdate}
-        hasDelete={true}
+        hasDelete={canDelete}
         // hasView={viewPermission}
         // hasEdit={updatePermission}
         // hasDelete={deletePermission}

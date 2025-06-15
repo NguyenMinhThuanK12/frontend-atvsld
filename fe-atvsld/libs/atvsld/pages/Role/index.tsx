@@ -237,6 +237,7 @@ export default function RolePage() {
           onFilterChange={handleFilterChange}
           filters={filters}
           hasEdit={canUpdate}
+          hasDelete={canDelete}
           onEdit={handleDisplayUpdatePage}
           hasStatus={false}
           hasView={false}

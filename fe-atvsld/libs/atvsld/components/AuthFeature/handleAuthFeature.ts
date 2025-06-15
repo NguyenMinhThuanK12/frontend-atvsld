@@ -3,7 +3,7 @@ import { useAuth } from "@/libs/core/hooks/AuthContext";
 export const clientMenuItems = [
   {
     name: "Báo cáo ATVSLĐ",
-    href: "/reports",
+    href: "/ATVSLD/report-sanitation",
   },
 ];
 
@@ -12,8 +12,10 @@ const hasAnyPermission = (permissions: (boolean | undefined)[]): boolean => {
 };
 
 export const handleGetPermissions = () => {
-  const AuthContextType = useAuth();
-  const permissions = AuthContextType.permissions;
+  const { permissions } = useAuth();
+
+  console.log("Permissions:", permissions);
+  
 
   // Business permissions
   const canViewBusiness = permissions?.BUSINESS?.VIEW === true;
@@ -36,6 +38,10 @@ export const handleGetPermissions = () => {
   const canCreateUser = permissions?.USER?.CREATE === true;
   const canUpdateUser = permissions?.USER?.UPDATE === true;
   const canDeleteUser = permissions?.USER?.DELETE === true;
+
+  // Report-configuration permissions
+  const canCreateReport = permissions?.REPORT_CONFIGURATION?.CREATE === true;
+  const canUpdateReport = permissions?.REPORT_CONFIGURATION?.UPDATE === true;
 
   const businessPermission = [
     canViewBusiness,
@@ -62,11 +68,17 @@ export const handleGetPermissions = () => {
     canDeleteUser,
   ];
 
+  const reportConfigurationPermission = [
+    canCreateReport,
+    canUpdateReport,
+  ];
+
   const permissionsList = {
     businessPermission,
     permissionPermission,
     rolePermission,
     userPermission,
+    reportConfigurationPermission,
   };
 
   return permissionsList; 
@@ -75,6 +87,9 @@ export const handleGetPermissions = () => {
 
 export const useAdminMenuItems = () => {
   const permissionsList = handleGetPermissions();
+
+  console.log("Permissions List:", permissionsList);
+  
 
   const menuConfig = [
     {
@@ -97,6 +112,11 @@ export const useAdminMenuItems = () => {
       name: "Tài khoản",
       href: "/dashboard/users",
     },
+    {
+      permission: permissionsList.reportConfigurationPermission,
+      name: "Cấu hình báo cáo",
+      href: "/dashboard/report-configuration",
+    },
   ];
 
   const AdminMenuItems = menuConfig
@@ -105,3 +125,26 @@ export const useAdminMenuItems = () => {
 
   return AdminMenuItems;
 }
+
+export const testMenuConfig = [
+  {
+    name: "Quản lý doanh nghiệp",
+    href: "",
+  },
+  {
+    name: "Phân quyền",
+    href: "",
+  },
+  {
+    name: "Vai trò",
+    href: "",
+  },
+  {
+    name: "Tài khoản",
+    href: "",
+  },
+  {
+    name: "Cấu hình báo cáo",
+    href: "",
+  },
+];

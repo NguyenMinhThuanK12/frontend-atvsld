@@ -2,7 +2,7 @@ import {
   applyFilters,
   GroupPermissionRow,
   isDuplicateRoleCode,
-  PermissionData,
+  fetchData as PermissionData,
 } from "@/libs/atvsld/components/PermissionFeature/handlePerrmissionFeatures";
 import {
   createRole,
@@ -105,7 +105,7 @@ export default function RoleDetail(props: RoleDetailProps) {
   useEffect(() => {
     let isMounted = true;
     (async () => {
-      const data = await PermissionData;
+      const data = await PermissionData();
       if (isMounted && data) {
         setFilteredPermissionRows(data);
         setGlobalPermissionRows(data);

@@ -2,6 +2,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
 import { refreshToken } from "@/libs/atvsld/services/api/authApi";
+import { Cookie } from "next/font/google";
 
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -62,7 +63,8 @@ api.interceptors.response.use(
         Cookies.remove("accessToken");
         Cookies.remove("refreshToken");
         Cookies.remove("fullName");
-        Cookies.remove("departmentId");
+        Cookies.remove("avatar");
+        Cookies.remove("userType");
         window.location.href = "/auth/login?logout=forced";
         return Promise.reject(refreshError);
       }

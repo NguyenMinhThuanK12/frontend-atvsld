@@ -6,7 +6,6 @@ import {
   getComponentPermissionsByGroup,
   getGroupPermissions,
 } from "../../services/api/permissionApi";
-import { PermissionData } from "../../components/PermissionFeature/handlePerrmissionFeatures";
 import { handleGetPermissions } from "../../components/AuthFeature/handleAuthFeature";
 
 interface GroupPermissionRow {

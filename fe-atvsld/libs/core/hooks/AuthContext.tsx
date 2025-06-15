@@ -1,7 +1,12 @@
-'use client';
+"use client";
 
-import { Permissions } from "@/libs/shared/atvsld/dto/response/auth/auth-response";
 import { createContext, ReactNode, useContext, useState } from "react";
+
+type PermissionAction = "VIEW" | "CREATE" | "UPDATE" | "DELETE";
+
+type PermissionMap = Partial<Record<PermissionAction, boolean>>;
+
+type Permissions = Record<string, PermissionMap>;
 
 interface AuthContextType {
     permissions: Permissions | null;

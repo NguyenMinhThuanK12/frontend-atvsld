@@ -78,11 +78,11 @@ export const createUser = async (
 export const updateUser = async (
   id: string,
   user: UpdateUserRequest
-): Promise<UserResponse> => {
+): Promise<ApiResponse<UserResponse>> => {
   const formData = convertUpdateUserRequest(user);
   console.log("Update User Form Data:", Object.fromEntries(formData.entries()));
   console.log("Update User ID:", id);
-  
+
   try {
     const response = await api.patch<ApiResponse<UserResponse>>(
       `/users/${id}`,
@@ -94,10 +94,10 @@ export const updateUser = async (
       }
     );
     if (!response.data || !response.data.data) {
-      throw new Error("No data found in the response");
+      throw new Error(response.data.message || "No data found in the response");
     }
 
-    return response.data.data;
+    return response.data;
   } catch (error) {
     console.error("Error updating user:", error);
     throw error;
@@ -178,6 +178,34 @@ export const checkEmailDuplicate = async (
     return response.data.data ?? false;
   } catch (error) {
     console.error("Error checking duplicate email:", error);
+    throw error;
+  }
+};
+
+export const checkPhoneNumberDuplicate = async (
+  phoneNumber: string,
+  excludeId?: string
+): Promise<boolean> => {
+  console.log("Checking duplicate phoneNumber:", phoneNumber);
+  console.log("Excluded ID:", excludeId);
+
+  try {
+    const response = await api.get<ApiResponse<boolean>>(
+      `/users/check-duplicate-phoneNumber?phoneNumber=${phoneNumber}`,
+      {
+        params: excludeId ? { excludeId } : {},
+      }
+    );
+
+    if (!response.data || response.data.status !== 200) {
+      throw new Error("Failed to check duplicate phoneNumber");
+    }
+
+    console.log("Response data:", response.data.data);
+
+    return response.data.data ?? false;
+  } catch (error) {
+    console.error("Error checking duplicate phoneNumber:", error);
     throw error;
   }
 };

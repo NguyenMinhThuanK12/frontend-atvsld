@@ -36,33 +36,6 @@ export const defaultUser: User = {
   isActive: true,
 };
 
-async function getImageFileFromUrl(url: string): Promise<File | null> {
-  try {
-    // Fetch the image as a blob
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error("Failed to fetch image");
-    }
-    const blob = await response.blob();
-
-    // Extract file extension from URL (e.g., '.png', '.jpg')
-    const fileName = url.substring(url.lastIndexOf("/") + 1) || "avatar";
-    const fileExtension = fileName.includes(".")
-      ? fileName.substring(fileName.lastIndexOf("."))
-      : ".png";
-
-    // Create a File object from the blob
-    const file = new File([blob], `${fileName}${fileExtension}`, {
-      type: blob.type,
-    });
-
-    return file;
-  } catch (error) {
-    console.error("Error fetching image:", error);
-    return null;
-  }
-}
-
 export const getAllUsersFeature = async (): Promise<User[]> => {
   try {
     const response = await getUsers();
@@ -123,14 +96,14 @@ export const updateUserFeature = async (
   try {
     const response = await updateUser(id, user);
 
-    if (!response) {
-      throw new Error(`Failed to update user with ID: ${id}`);
+    if (!response.data || response.status !== 200) {
+      throw new Error(response.message || "Failed to update user");
     }
 
-    return !!response;
+    return !!response.data;
   } catch (error) {
     console.error("Error updating user:", error);
-    return false; // Return false if there was an error
+    throw error; // Re-throw the error for further handling
   }
 };
 

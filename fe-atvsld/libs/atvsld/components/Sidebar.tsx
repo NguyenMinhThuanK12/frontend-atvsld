@@ -8,13 +8,17 @@ import Cookies from "js-cookie";
 import SidebarItem from "./SidebarItem";
 import Alert from "@/libs/core/components/Alert/primaryAlert";
 import { logout } from "@/libs/atvsld/services/api/authApi";
+import { UserType } from "@/libs/shared/core/enums/userType";
+import {
+  clientMenuItems,
+  useAdminMenuItems,
+} from "./AuthFeature/handleAuthFeature";
 
-interface SidebarProps {
-  menuItems: {name: string; href: string }[];
-}
+const Sidebar = () => {
+  const [menuItems, setMenuItems] = useState<{ name: string; href: string }[]>(
+    []
+  );
 
-const Sidebar = (props: SidebarProps) => {
-  const { menuItems } = props;
   const [isSystemOpen, setIsSystemOpen] = useState(true);
   const [username, setUsername] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
@@ -26,6 +30,7 @@ const Sidebar = (props: SidebarProps) => {
   const searchParams = useSearchParams();
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const pathName = usePathname();
+  const [isLoading, setIsLoading] = useState(true);
 
   const showAlert = useCallback(
     (
@@ -40,7 +45,24 @@ const Sidebar = (props: SidebarProps) => {
     []
   );
 
-  // console.log("Menu Items:", menuItems);
+  const adminMenuItems = useAdminMenuItems();
+
+  useEffect(() => {
+    const userType = Cookies.get("userType");
+    if (!userType) {
+      window.location.href = "/auth/login";
+      return;
+    }
+
+    // Set menu items based on user type
+    if (userType === UserType.ADMIN) {
+      
+      setMenuItems(adminMenuItems);
+    } else {
+      setMenuItems(clientMenuItems);
+    }
+    setIsLoading(false);
+  }, []);
 
   useEffect(() => {
     const signInStatus = searchParams.get("login");
@@ -114,6 +136,14 @@ const Sidebar = (props: SidebarProps) => {
     router.push("/auth/login?logout=success");
   }, [router, showAlert]);
 
+  if (isLoading) {
+    return (
+      <div className="h-screen w-80 fixed top-0 left-0 bg-leftSidebar z-50 flex items-center justify-center">
+        <span className="text-white">Đang tải...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen w-80 fixed top-0 left-0 bg-leftSidebar z-50">
       {/* horizontal tab */}
@@ -163,7 +193,7 @@ const Sidebar = (props: SidebarProps) => {
           <div className="mt-2">
             {menuItems.length > 0 &&
               menuItems
-              .filter((item): item is { name: string; href: string } =>
+                .filter((item): item is { name: string; href: string } =>
                   Boolean(item)
                 )
                 .map((item) => (

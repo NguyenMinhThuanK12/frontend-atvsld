@@ -57,7 +57,7 @@ export default function LoginPage() {
     if (logoutStatus === "success") {
       showAlert("Đăng xuất thành công.", "success");
     } else if (logoutStatus === "forced") {
-      showAlert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", "error");
+      showAlert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", "warning");
     }
   }, []);
 
@@ -160,7 +160,7 @@ export default function LoginPage() {
         const permissions = userAuthenticated.permissions;
         setAuthData(permissions); // Set permissions in context
       } else {
-        redirectPath = "/reports";
+        redirectPath = "/ATVSLD/report-sanitation";
         setAuthData(null); 
       } 
       setLoading(false);
@@ -225,7 +225,7 @@ export default function LoginPage() {
           </div>
 
           {/* Login Form */}
-          <form onSubmit={handleLogin}>
+          <form onSubmit={handleLogin} className="flex flex-col space-y-4">
             <PrimaryTextField
               label={renderLabelWithAsterisk("Tên đăng nhập", true)}
               value={username}

@@ -14,6 +14,7 @@ interface PrimaryTextFieldProps {
   className?: string;
   disabled?: boolean;
   size?: "small" | "medium";
+  slotProps?: {}
 }
 
 const PrimaryTextField: React.FC<PrimaryTextFieldProps> = ({
@@ -27,6 +28,7 @@ const PrimaryTextField: React.FC<PrimaryTextFieldProps> = ({
   className = "",
   disabled = false,
   size = "medium",
+  slotProps = {},
 }) => {
   // Only allow "small" or "medium" for MUI TextField
   return (
@@ -43,34 +45,35 @@ const PrimaryTextField: React.FC<PrimaryTextFieldProps> = ({
       error={error}
       helperText={helperText}
       disabled={disabled}
+      slotProps={slotProps}
       sx={{
-        marginBottom: "1.5rem",
+        // marginBottom: "1.5rem",
         "& .MuiOutlinedInput-root": {
           "& fieldset": {
-            borderColor: error ? "red" : disabled ? "#e5e7eb" : "#d1d5db", 
+            borderColor: error ? "red" : disabled ? "#e5e7eb" : "#d1d5db",
           },
           "&:hover fieldset": {
-            borderColor: error ? "red" : disabled ? "#e5e7eb" : "#9ca3af", 
+            borderColor: error ? "red" : disabled ? "#e5e7eb" : "#9ca3af",
           },
           "&.Mui-focused fieldset": {
-            borderColor: error ? "red" : disabled ? "#e5e7eb" : "#3b82f6", 
+            borderColor: error ? "red" : disabled ? "#e5e7eb" : "#3b82f6",
           },
           "&.Mui-disabled fieldset": {
             borderColor: error ? "red" : "#e5e7eb",
           },
         },
         "& .MuiInputLabel-root": {
-          color: error ? "red" : disabled ? "#D6D6D6" : "#6b7280", 
+          color: error ? "red" : disabled ? "#D6D6D6" : "#6b7280",
           "&.Mui-disabled": {
             color: error ? "red" : "#D6D6D6",
           },
         },
         "& .MuiInputLabel-shrink": {
-          transform: "translate(14px, -9px) scale(0.75)", 
-          color: error ? "red" : disabled ? "#9ca3af" : "#3b82f6", 
+          transform: "translate(14px, -9px) scale(0.75)",
+          color: error ? "red" : disabled ? "#9ca3af" : "#3b82f6",
         },
         "& .MuiFormHelperText-root": {
-          color: error ? "red" : "#6b7280", 
+          color: error ? "red" : "#6b7280",
           marginTop: "4px",
         },
         "& .MuiInputLabel-asterisk": {

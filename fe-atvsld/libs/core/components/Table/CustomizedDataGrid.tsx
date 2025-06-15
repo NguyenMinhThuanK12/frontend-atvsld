@@ -16,11 +16,16 @@ import { DataGrid, GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import { Eye, KeyRound, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 import ConfirmationDialog from "../Dialog/ConfirmationDialog";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { vi } from "date-fns/locale";
+import PrimaryDatePicker from "../DatePicker/PrimaryDatePicker";
 
 export interface ColumnConfig {
   field: string;
   headerName: string;
-  inputType?: "text" | "select";
+  inputType?: "text" | "select" | "date";
   options?: { value: string; label: string | undefined }[];
   flex?: number;
   minWidth?: number;
@@ -29,7 +34,7 @@ export interface ColumnConfig {
 interface CustomDataGridProps<T> {
   rows: T[];
   columnsConfig: ColumnConfig[];
-  onRowSelectionChange: (selectedRows: T[]) => void;
+  onRowSelectionChange?: (selectedRows: T[]) => void;
   pageSizeOptions?: number[];
   initialPageSize?: number;
   onStatusChange?: (rowId: string, newStatus: boolean) => void;
@@ -37,7 +42,7 @@ interface CustomDataGridProps<T> {
   onEdit?: (row: T) => void;
   onDelete?: (rows: T[]) => void;
   onFilterChange: (field: string, value: string) => void;
-  filters: Record<string, string>;
+  filters?: Record<string, string>;
   hasStatus?: boolean;
   hasView?: boolean;
   hasEdit?: boolean;
@@ -110,7 +115,7 @@ export default function CustomizedDataGrid<
           <span className="text-[#637381] font-bold text-sm w-full">
             {col.headerName}
           </span>
-          {col.inputType === "text" ? (
+          {col.inputType === "text" && (
             <TextField
               className="w-full bg-white"
               variant="outlined"
@@ -119,11 +124,10 @@ export default function CustomizedDataGrid<
               value={filters[col.field] || ""}
               onChange={(e) => onFilterChange(col.field, e.target.value)}
               sx={{ fontSize: 14, minHeight: 36 }}
-              //   aria-label={`Header input for ${col.field}`}
             />
-          ) : col.inputType === "select" && col.options ? (
+          )}
+          {col.inputType === "select" && col.options && (
             <FormControl fullWidth size="small">
-              {/* <InputLabel>{col.headerName}</InputLabel> */}
               <Select
                 className="w-full bg-white"
                 variant="outlined"
@@ -149,7 +153,29 @@ export default function CustomizedDataGrid<
                 ))}
               </Select>
             </FormControl>
-          ) : null}
+          )}
+          {col.inputType === "date" && (
+
+            <PrimaryDatePicker
+              label=""
+              value={filters[col.field] ? new Date(filters[col.field]) : null}
+              onChange={(date) =>
+                onFilterChange(
+                  col.field,
+                  date ? date.toISOString().slice(0, 10) : ""
+                )
+              }
+              slotProps={{
+                textField: {
+                  variant: "outlined",
+                  size: "small",
+                  fullWidth: true,
+                  className: "w-full bg-white",
+                  sx: { fontSize: 14, minHeight: 36 },
+                },
+              }}
+            />
+          )}
         </div>
       ),
     })),
@@ -169,7 +195,7 @@ export default function CustomizedDataGrid<
                 </span>
                 <FormControl fullWidth size="small">
                   {/* <InputLabel>{col.headerName}</InputLabel> */}
-                    <Select
+                  <Select
                     className="w-full bg-white"
                     variant="outlined"
                     sx={{ fontSize: 14, minHeight: 36 }}
@@ -179,7 +205,7 @@ export default function CustomizedDataGrid<
                       onFilterChange("isActive", e.target.value);
                     }}
                     aria-label={`Header select for Status`}
-                    >
+                  >
                     {statusOptions.map((option) => (
                       <MenuItem key={option.label} value={option.value}>
                         {option.label}
@@ -397,7 +423,7 @@ export default function CustomizedDataGrid<
             },
           }}
           pageSizeOptions={pageSizeOptions}
-          checkboxSelection
+          checkboxSelection={hasDelete}
           disableRowSelectionOnClick
           disableColumnResize
           disableColumnMenu

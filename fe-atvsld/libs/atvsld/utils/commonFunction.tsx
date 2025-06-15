@@ -50,8 +50,7 @@ export const extractFileName = (file?: File | string | null) => {
   return nameParts[0].trim() + ".pdf";
 };
 
-
-export const HandleGetLabelByValue= (
+export const HandleGetLabelByValue = (
   id: string,
   options: { value: string; label: string }[]
 ): string => {
@@ -63,4 +62,23 @@ export const HandleGetLabelByValue= (
     return "";
   }
   return opt.label;
+};
+
+export const formatDate = (date: Date | string | null | undefined) => {
+  // Handle null or undefined
+  if (!date) return "";
+
+  // Convert to Date object if input is a string
+  const dateObj = typeof date === "string" ? new Date(date) : date;
+
+  // Check if dateObj is a valid Date
+  if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
+    console.warn(`Invalid date input: ${date}`);
+    return "";
+  }
+
+  const day = String(dateObj.getDate()).padStart(2, "0");
+  const month = String(dateObj.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+  const year = dateObj.getFullYear();
+  return `${day}/${month}/${year}`;
 };
