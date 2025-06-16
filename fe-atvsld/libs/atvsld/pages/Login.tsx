@@ -38,7 +38,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [loading, setLoading] = useState(false); // Add loading state
-  const { setAuthData } = useAuth(); // Import the context to set auth data
+  const { dispatch } = useAuth();
 
   const [alert, setAlert] = useState<{
     content: string;
@@ -158,10 +158,13 @@ export default function LoginPage() {
       if (userType === UserType.ADMIN) {
         redirectPath = "/dashboard/greeting";
         const permissions = userAuthenticated.permissions;
-        setAuthData(permissions); // Set permissions in context
+        Cookies.set("permissions", JSON.stringify(permissions), {
+          secure: true,
+          sameSite: "Strict",
+        });
+        dispatch({ type: "SET_PERMISSIONS", payload: permissions });
       } else {
         redirectPath = "/ATVSLD/report-sanitation";
-        setAuthData(null); 
       } 
       setLoading(false);
       router.push(redirectPath + "?login=success");

@@ -1,4 +1,5 @@
 import { useAuth } from "@/libs/core/hooks/AuthContext";
+import { useEffect } from "react";
 
 export const clientMenuItems = [
   {
@@ -7,41 +8,41 @@ export const clientMenuItems = [
   },
 ];
 
-const hasAnyPermission = (permissions: (boolean | undefined)[]): boolean => {
-  return permissions.some((perm) => perm === true);
+const hasAnyPermission = (state: (boolean | undefined)[]): boolean => {
+  return state.some((perm) => perm === true);
 };
 
 export const handleGetPermissions = () => {
-  const { permissions } = useAuth();
+  const { state } = useAuth();
 
-  console.log("Permissions:", permissions);
+  console.log("state:", state);
   
 
-  // Business permissions
-  const canViewBusiness = permissions?.BUSINESS?.VIEW === true;
-  const canCreateBusiness = permissions?.BUSINESS?.CREATE === true;
-  const canUpdateBusiness = permissions?.BUSINESS?.UPDATE === true;
-  const canDeleteBusiness = permissions?.BUSINESS?.DELETE === true;
+  // Business state
+  const canViewBusiness = state?.permissions?.BUSINESS?.VIEW === true;
+  const canCreateBusiness = state?.permissions?.BUSINESS?.CREATE === true;
+  const canUpdateBusiness = state?.permissions?.BUSINESS?.UPDATE === true;
+  const canDeleteBusiness = state?.permissions?.BUSINESS?.DELETE === true;
 
-  // Permission permissions
-  const canViewPermission = permissions?.PERMISSION?.VIEW === true;
+  // Permission state
+  const canViewPermission = state?.permissions?.PERMISSION?.VIEW === true;
 
 
-  // Role permissions
-  const canViewRole = permissions?.ROLE?.VIEW === true;
-  const canCreateRole = permissions?.ROLE?.CREATE === true;
-  const canUpdateRole = permissions?.ROLE?.UPDATE === true;
-  const canDeleteRole = permissions?.ROLE?.DELETE === true;
+  // Role state
+  const canViewRole = state?.permissions?.ROLE?.VIEW === true;
+  const canCreateRole = state?.permissions?.ROLE?.CREATE === true;
+  const canUpdateRole = state?.permissions?.ROLE?.UPDATE === true;
+  const canDeleteRole = state?.permissions?.ROLE?.DELETE === true;
 
-  // User permissions
-  const canViewUser = permissions?.USER?.VIEW === true;
-  const canCreateUser = permissions?.USER?.CREATE === true;
-  const canUpdateUser = permissions?.USER?.UPDATE === true;
-  const canDeleteUser = permissions?.USER?.DELETE === true;
+  // User state
+  const canViewUser = state?.permissions?.USER?.VIEW === true;
+  const canCreateUser = state?.permissions?.USER?.CREATE === true;
+  const canUpdateUser = state?.permissions?.USER?.UPDATE === true;
+  const canDeleteUser = state?.permissions?.USER?.DELETE === true;
 
-  // Report-configuration permissions
-  const canCreateReport = permissions?.REPORT_CONFIGURATION?.CREATE === true;
-  const canUpdateReport = permissions?.REPORT_CONFIGURATION?.UPDATE === true;
+  // Report-configuration state
+  const canCreateReport = state?.permissions?.REPORT_CONFIGURATION?.CREATE === true;
+  const canUpdateReport = state?.permissions?.REPORT_CONFIGURATION?.UPDATE === true;
 
   const businessPermission = [
     canViewBusiness,
@@ -73,7 +74,7 @@ export const handleGetPermissions = () => {
     canUpdateReport,
   ];
 
-  const permissionsList = {
+  const stateList = {
     businessPermission,
     permissionPermission,
     rolePermission,
@@ -81,39 +82,38 @@ export const handleGetPermissions = () => {
     reportConfigurationPermission,
   };
 
-  return permissionsList; 
+  return stateList; 
 }
 
 
 export const useAdminMenuItems = () => {
-  const permissionsList = handleGetPermissions();
+  const stateList = handleGetPermissions();
 
-  console.log("Permissions List:", permissionsList);
-  
+  console.log("state List:", stateList);
 
   const menuConfig = [
     {
-      permission: permissionsList.businessPermission,
+      permission: stateList.businessPermission,
       name: "Quản lý doanh nghiệp",
       href: "/dashboard/businesses",
     },
     {
-      permission: permissionsList.permissionPermission,
+      permission: stateList.permissionPermission,
       name: "Phân quyền",
-      href: "/dashboard/permissions",
+      href: "/dashboard/state",
     },
     {
-      permission: permissionsList.rolePermission,
+      permission: stateList.rolePermission,
       name: "Vai trò",
       href: "/dashboard/roles",
     },
     {
-      permission: permissionsList.userPermission,
+      permission: stateList.userPermission,
       name: "Tài khoản",
       href: "/dashboard/users",
     },
     {
-      permission: permissionsList.reportConfigurationPermission,
+      permission: stateList.reportConfigurationPermission,
       name: "Cấu hình báo cáo",
       href: "/dashboard/report-configuration",
     },

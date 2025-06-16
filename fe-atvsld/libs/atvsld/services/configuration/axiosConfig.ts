@@ -17,11 +17,22 @@ const api = axios.create({
 
 api.interceptors.request.use((config: CustomAxiosRequestConfig) => {
   const token = Cookies.get("accessToken");
-  if (token) {
+
+  const publicPaths = [
+    "/auth/login",
+    "/auth/refresh-token",
+    "/auth/forgot-password",
+  ];
+  const requestUrl = config.url ?? "";
+
+  const isPublicApi = publicPaths.some((path) => requestUrl.includes(path));
+  if (!isPublicApi && token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
+
 
 api.interceptors.response.use(
   (response) => response,
