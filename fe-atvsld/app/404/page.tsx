@@ -3,7 +3,6 @@
 import React from 'react'
 import Cookies from "js-cookie";
 import { refreshToken } from '@/libs/atvsld/services/api/authApi';
-import { redirect } from 'next/navigation';
 
 export default function page() {
   const callRefreshToken = async () => {
