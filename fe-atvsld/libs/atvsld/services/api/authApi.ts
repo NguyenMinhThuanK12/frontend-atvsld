@@ -33,11 +33,17 @@ export const login = async (
 export const refreshToken = async (
   refreshToken: string
 ): Promise<ApiResponse<{ access_token: string }>> => {
+  console.log("Refreshing token with refreshToken:", refreshToken);
   try {
     const response = await api.post<ApiResponse<{ access_token: string }>>(
       "/auth/refresh-token",
       { refresh_token: refreshToken }
     );
+    if (!response.data || response.data.status !== 200) {
+      console.error("No data received in response:", response);
+      throw new Error("No data received in response");
+    }
+
     console.log("new access Token Response:", response.data.data?.access_token);
     return response.data;
   } catch (error: unknown) {

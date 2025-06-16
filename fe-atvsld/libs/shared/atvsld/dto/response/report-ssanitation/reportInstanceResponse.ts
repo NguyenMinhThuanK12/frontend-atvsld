@@ -11,4 +11,5 @@ export interface ReportInstanceResponse {
   period: ReportingPeriod;
   lastUpdatedDate: Date | null;
   lastUpdatedBy: string | null;
+  isOverdue: boolean;
 }

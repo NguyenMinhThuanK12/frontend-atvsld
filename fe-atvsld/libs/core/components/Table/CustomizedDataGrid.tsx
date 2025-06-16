@@ -49,11 +49,10 @@ interface CustomDataGridProps<T> {
   hasDelete?: boolean;
   hasResetPassword?: boolean;
   onResetPassword?: (rowId: string) => void;
+  isRowEditable?: (row: T) => boolean;
 }
 
-export default function CustomizedDataGrid<
-  T extends { id: string; isActive?: boolean }
->({
+export default function CustomizedDataGrid<T extends { id: string; isActive?: boolean }>({
   rows,
   columnsConfig,
   onRowSelectionChange,
@@ -71,6 +70,7 @@ export default function CustomizedDataGrid<
   hasDelete = true,
   hasResetPassword = false,
   onResetPassword,
+  isRowEditable,
 }: CustomDataGridProps<T>) {
   // console.log("Rendering CustomizedDataGrid with rows:", rows);
 
@@ -155,7 +155,6 @@ export default function CustomizedDataGrid<
             </FormControl>
           )}
           {col.inputType === "date" && (
-
             <PrimaryDatePicker
               label=""
               value={filters[col.field] ? new Date(filters[col.field]) : null}
@@ -268,7 +267,7 @@ export default function CustomizedDataGrid<
                     <Eye size={20} />
                   </button>
                 )}
-                {hasEdit && (
+                {hasEdit && (!isRowEditable || isRowEditable(params.row)) && (
                   <button
                     onClick={() => onEdit?.(params.row)}
                     title="Chỉnh sửa"

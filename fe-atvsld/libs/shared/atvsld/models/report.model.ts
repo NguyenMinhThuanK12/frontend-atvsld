@@ -9,4 +9,5 @@ export interface Report {
     startDate: Date;
     endDate: Date;
     isActive: boolean;
+    isOverdue: boolean;
 }

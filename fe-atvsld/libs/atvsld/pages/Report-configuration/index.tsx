@@ -16,6 +16,7 @@ import Alert from "@/libs/core/components/Alert/primaryAlert";
 import {
   filterReportConfigurationsFeature,
   getReportConfigurationsFeature,
+  toggleActiveStatusFeature,
 } from "../../components/ReportFeature/handleReportFeature";
 import { formatDate } from "../../utils/commonFunction";
 import { convertToReportConfigRow } from "@/libs/shared/atvsld/mapping/ReportConfigMapping";
@@ -88,7 +89,12 @@ export default function ReportConfigurationPage() {
     content: string,
     type: "success" | "error" | "info" | "warning",
     duration: number = 2000 // default 2 seconds
-  ) => setAlert({ content, type, duration });
+  ) => {
+    setAlert({ content, type, duration });
+    setTimeout(() => {
+      setAlert(null);
+    }, duration);
+  };
 
   // get all
   const getReportConfigs = async () => {
@@ -140,7 +146,7 @@ export default function ReportConfigurationPage() {
           showAlert(
             "Không tìm thấy người dùng phù hợp với điều kiện lọc.",
             "warning",
-            5000
+            2000
           );
         }
       }
@@ -155,6 +161,27 @@ export default function ReportConfigurationPage() {
 
     applyFilters();
   }, [filters]);
+
+  const handleToggleActive = async (rowId: string, newStatus: boolean) => {
+    try {
+      const response = await toggleActiveStatusFeature(rowId);
+      if (!response) {
+        showAlert("Không thể cập nhật trạng thái", "error");
+        return;
+      }
+      showAlert(
+        `Trạng thái đã được ${response ? "kích hoạt" : "vô hiệu hóa"}`,
+        "success"
+      );
+      getReportConfigs();
+    } catch (error) {
+      console.error("Error toggling active status:", error);
+      showAlert(
+        error instanceof Error ? error.message : "Lỗi không xác định",
+        "error"
+      );
+    }
+  };
 
   const handleDisplayCreationPopup = () => {
     setOpenModal(true);
@@ -193,6 +220,7 @@ export default function ReportConfigurationPage() {
           hasDelete={false}
           hasView={false}
           onEdit={handleDisplayEditPopup}
+          onStatusChange={handleToggleActive}
         />
       </div>
 

@@ -27,6 +27,7 @@ export const defaultReport: Report = {
     return d;
   })(),
   isActive: true,
+  isOverdue: false,
 };
 
 export const getReportConfigurationsFeature = async (
@@ -161,7 +162,9 @@ export const checkDuplicateYearFeature = async (
         response.message || "Failed to check duplicate report configuration"
       );
     }
-    return response.data.isDuplicated;
+    console.log("Duplicate check response:", response.data.isDuplicate);
+    
+    return response.data.isDuplicate;
   } catch (error) {
     console.error("Error checking duplicate report configuration:", error);
     throw error; // Re-throw the error for further handling

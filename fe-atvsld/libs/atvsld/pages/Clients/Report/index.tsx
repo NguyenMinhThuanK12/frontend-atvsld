@@ -24,6 +24,7 @@ export interface ReportSanitationRow {
   updatedDate: string;
   updateBy: string;
   status: string;
+  isOverdue: boolean;
 }
 
 const columnsConfig: ColumnConfig[] = [
@@ -85,9 +86,7 @@ export default function ReportSanitationPage() {
   const [yearOptions, setYearOptions] = useState<
     { value: string; label: string }[]
     >([]);
-  const [hasView, setHasView] = useState<boolean>(false);
-  const [hasUpdate, setHasUpdate] = useState<boolean>(false);
-
+  const [hasEdit, setHasEdit] = useState<boolean>(true);
   // notify
   const [alert, setAlert] = useState<{
     content: string;
@@ -211,6 +210,8 @@ export default function ReportSanitationPage() {
           onFilterChange={handleFilterChange}
           hasStatus={false}
           hasDelete={false}
+          hasEdit={hasEdit}
+          isRowEditable={(row: ReportSanitationRow) => !row.isOverdue}
         />
       </div>
 

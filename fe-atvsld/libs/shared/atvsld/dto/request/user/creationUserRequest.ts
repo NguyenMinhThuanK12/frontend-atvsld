@@ -11,7 +11,7 @@ export interface CreationUserRequest {
   roleId: string | null;
 
   email: string;
-  phoneNumber: string;
+  phoneNumber?: string | null;
 
   birthday?: Date | null;
   gender?: Gender | null;

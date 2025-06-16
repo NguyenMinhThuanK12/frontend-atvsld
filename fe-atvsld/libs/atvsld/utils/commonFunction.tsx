@@ -82,3 +82,39 @@ export const formatDate = (date: Date | string | null | undefined) => {
   const year = dateObj.getFullYear();
   return `${day}/${month}/${year}`;
 };
+
+// check startDate can be less than today
+export const isStartDateValid = (startDate: Date | string | null | undefined) => {
+  // Handle null or undefined
+  if (!startDate) return false;
+
+  // Convert to Date object if input is a string
+  const startDateObj = typeof startDate === "string" ? new Date(startDate) : startDate;
+
+  // Check if startDateObj is a valid Date
+  if (!(startDateObj instanceof Date) || isNaN(startDateObj.getTime())) {
+    console.warn(`Invalid start date input: ${startDate}`);
+    return false;
+  }
+
+  const today = new Date();
+  return startDateObj < today;
+}
+
+// check endDate can be less than today
+export const isEndDateValid = (endDate: Date | string | null | undefined) => {
+  // Handle null or undefined
+  if (!endDate) return false;
+
+  // Convert to Date object if input is a string
+  const endDateObj = typeof endDate === "string" ? new Date(endDate) : endDate;
+
+  // Check if endDateObj is a valid Date
+  if (!(endDateObj instanceof Date) || isNaN(endDateObj.getTime())) {
+    console.warn(`Invalid end date input: ${endDate}`);
+    return false;
+  }
+
+  const today = new Date();
+  return endDateObj < today;
+}

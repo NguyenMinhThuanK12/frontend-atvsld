@@ -69,7 +69,12 @@ export default function ReportConfigDetail(props: ReportConfigDetailProps) {
     content: string,
     type: "success" | "error" | "warning" | "info",
     duration = 2000
-  ) => setAlert({ content, type, duration });
+  ) => {
+    setAlert({ content, type, duration });
+    setTimeout(() => {
+      setAlert(null);
+    }, duration);
+  };
 
   useEffect(() => {
     if (selectedId) {
@@ -129,7 +134,7 @@ export default function ReportConfigDetail(props: ReportConfigDetailProps) {
 
   // check duplicate year
   useEffect(() => {
-    if (yearVal && reportName) {
+    if (yearVal && reportName && !selectedId) {
       console.log("Checking for duplicate year:", yearVal, reportName);
 
       debouncedCheckDuplicateYear(reportName, yearVal.toString());
@@ -323,9 +328,17 @@ export default function ReportConfigDetail(props: ReportConfigDetailProps) {
                   control={control}
                   rules={{
                     required: "Ngày kết thúc là bắt buộc",
-                    validate: (value) =>
-                      value > watch("startDate") ||
-                      "Ngày kết thúc phải sau ngày bắt đầu",
+                    validate: (value: Date | null) => {
+                      const startDate = watch("startDate");
+                      if (!value) return true;
+                      if (startDate && value <= startDate) {
+                        return "Ngày kết thúc phải sau ngày bắt đầu";
+                      }
+                      if (value < new Date() && !selectedId) {
+                        return "Ngày kết thúc không được trong quá khứ";
+                      }
+                      return true;
+                    },
                   }}
                   render={({ field }) => (
                     <PrimaryDatePicker

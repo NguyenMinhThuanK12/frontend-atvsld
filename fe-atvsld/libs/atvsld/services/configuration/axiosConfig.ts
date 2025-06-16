@@ -2,7 +2,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
 import { refreshToken } from "@/libs/atvsld/services/api/authApi";
-import { Cookie } from "next/font/google";
 
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -60,6 +59,7 @@ api.interceptors.response.use(
         console.log("Retrying original request with new token...");
         return api(originalRequest);
       } catch (refreshError) {
+        console.error("Failed to refresh token:", refreshError);
         Cookies.remove("accessToken");
         Cookies.remove("refreshToken");
         Cookies.remove("fullName");

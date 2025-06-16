@@ -109,7 +109,7 @@ export const getReportInstanceFeature = async (filters?: Record<string,string>):
       throw new Error(response.message || "No report instance data found");
     }
 
-    return response.data.data;
+    return response.data;
   } catch (error) {
     console.error("Error fetching report instance feature:", error);
     throw error;

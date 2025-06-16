@@ -13,12 +13,13 @@ export const convertToReportSanitationRow = (
   const rows = report.map((item) => ({
     id: item.id,
     businessName: item.businessName,
-    startDate: item.startDate ? formatDate(item.startDate) : "",
-    endDate: item.endDate ? formatDate(item.endDate) : "",
+    startDate: formatDate(item.startDate),
+    endDate: formatDate(item.endDate),
     reportingPeriod: item.period ?? ReportingPeriod.ALL_YEAR, 
-    status: item.status ?? ReportingPeriod.ALL_YEAR,
-    updatedDate: item.lastUpdatedDate ? formatDate(item.lastUpdatedDate) : "",
+    status: item.isOverdue ? "Quá hạn" : item.status,
+    updatedDate: item.lastUpdatedDate ? formatDate(item.lastUpdatedDate) : "N/A",
     updateBy: item.lastUpdatedBy ? item.lastUpdatedBy : "N/A",
+    isOverdue: item.isOverdue,
   }));
     
   return rows;

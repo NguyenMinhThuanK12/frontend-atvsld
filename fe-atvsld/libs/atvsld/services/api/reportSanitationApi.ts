@@ -3,12 +3,12 @@ import api from "../configuration/axiosConfig";
 import { ReportInstanceResponse } from "@/libs/shared/atvsld/dto/response/report-ssanitation/reportInstanceResponse";
 import { QueryReportInstanceRequest } from "@/libs/shared/atvsld/dto/request/report-sanitation/QueryReportInstanceRequest";
 
-export const getReportInstance = async (query?: QueryReportInstanceRequest): Promise<ApiResponse<paginationResponse<ReportInstanceResponse>>> => {
+export const getReportInstance = async (query?: QueryReportInstanceRequest): Promise<ApiResponse<ReportInstanceResponse[]>> => {
     console.log("Fetching report sanitation with query:", query);
     
   try {
         const response =
-          await api.get<ApiResponse<paginationResponse<ReportInstanceResponse>>>(
+          await api.get<ApiResponse<ReportInstanceResponse[]>>(
               "report-instances/search",
                 { params: query }
           );

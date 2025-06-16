@@ -89,10 +89,10 @@ export const filterReportConfigurations = async (query: QueryReportConfigRequest
     }
 }
 
-export const checkDuplicateYear = async (reportName: string, year: string, excludeId?: string): Promise<ApiResponse<{ isDuplicated: boolean}>> => {
+export const checkDuplicateYear = async (reportName: string, year: string, excludeId?: string): Promise<ApiResponse<{ isDuplicate: boolean}>> => {
     console.log("Checking for duplicate year:", { reportName, year, excludeId });
     try {
-        const response = await api.get<ApiResponse<{ isDuplicated: boolean}>>("report-configurations/check-duplicate-year", {
+        const response = await api.get<ApiResponse<{ isDuplicate: boolean}>>("report-configurations/check-duplicate-year", {
             params: { reportName, year, excludeId }
         })
         if (!response.data || response.data.status !== 200) {
