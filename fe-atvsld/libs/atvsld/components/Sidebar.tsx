@@ -13,6 +13,7 @@ import {
   clientMenuItems,
   useAdminMenuItems,
 } from "./AuthFeature/handleAuthFeature";
+import { useAuth } from "@/libs/core/hooks/AuthContext";
 
 const Sidebar = () => {
   const [menuItems, setMenuItems] = useState<{ name: string; href: string }[]>(
@@ -31,6 +32,7 @@ const Sidebar = () => {
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const pathName = usePathname();
   const [isLoading, setIsLoading] = useState(true);
+  const { state } = useAuth();
 
   const showAlert = useCallback(
     (
@@ -56,13 +58,14 @@ const Sidebar = () => {
 
     // Set menu items based on user type
     if (userType === UserType.ADMIN) {
+      console.log("adminMenuItems: ", adminMenuItems);
       
       setMenuItems(adminMenuItems);
     } else {
       setMenuItems(clientMenuItems);
     }
     setIsLoading(false);
-  }, []);
+  }, [state]);
 
   useEffect(() => {
     const signInStatus = searchParams.get("login");

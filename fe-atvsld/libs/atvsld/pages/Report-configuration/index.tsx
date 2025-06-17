@@ -41,7 +41,7 @@ const columnsConfig: ColumnConfig[] = [
   },
   {
     field: "reportType",
-    headerName: "Năm báo cáo",
+    headerName: "Tên báo cáo",
     flex: 1,
     minWidth: 100,
     inputType: "select",
@@ -170,8 +170,8 @@ export default function ReportConfigurationPage() {
         return;
       }
       showAlert(
-        `Trạng thái đã được ${response ? "kích hoạt" : "vô hiệu hóa"}`,
-        "success"
+        `Trạng thái đã được ${newStatus ? "kích hoạt" : "vô hiệu hóa"}`,
+        "info"
       );
       getReportConfigs();
     } catch (error) {

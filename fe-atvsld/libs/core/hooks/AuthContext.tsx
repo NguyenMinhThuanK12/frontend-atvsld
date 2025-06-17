@@ -1,38 +1,76 @@
 "use client";
 
-import { createContext, ReactNode, useContext, useState } from "react";
+import {
+  createContext,
+  useReducer,
+  useContext,
+  ReactNode,
+  Dispatch,
+  useEffect,
+} from "react";
+import Cookies from "js-cookie";
 
 type PermissionAction = "VIEW" | "CREATE" | "UPDATE" | "DELETE";
-
 type PermissionMap = Partial<Record<PermissionAction, boolean>>;
+export type Permissions = Record<string, PermissionMap>;
 
-type Permissions = Record<string, PermissionMap>;
-
-interface AuthContextType {
-    permissions: Permissions | null;
-    setAuthData: (permissionList: Permissions | null) => void;
+interface AuthState {
+  permissions: Permissions | null;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const initialState: AuthState = {
+  permissions: null,
+};
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [permissions, setPermissions] = useState<Permissions | null>(null);
+type Action =
+  | { type: "SET_PERMISSIONS"; payload: Permissions }
+  | { type: "CLEAR_PERMISSIONS" };
 
-  const setAuthData = (newPermissions: Permissions | null) => {
-    setPermissions(newPermissions);
+const authReducer = (state: AuthState, action: Action): AuthState => {
+  switch (action.type) {
+    case "SET_PERMISSIONS":
+      return { ...state, permissions: action.payload };
+    case "CLEAR_PERMISSIONS":
+      return { ...state, permissions: null };
+    default:
+      return state;
+  }
+};
+
+const AuthContext = createContext<
+  | {
+      state: AuthState;
+      dispatch: Dispatch<Action>;
+    }
+  | undefined
+  >(undefined);
+
+  export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    const [state, dispatch] = useReducer(authReducer, initialState);
+
+    useEffect(() => {
+      const stored = Cookies.get("permissions");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          dispatch({ type: "SET_PERMISSIONS", payload: parsed });
+        } catch (e) {
+          console.error("Invalid permissions cookie", e);
+        }
+      }
+    }, []);
+
+    return (
+      <AuthContext.Provider value={{ state, dispatch }}>
+        {children}
+      </AuthContext.Provider>
+    );
   };
 
-  return (
-    <AuthContext.Provider value={{ permissions, setAuthData }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used inside AuthProvider");
   return context;
-}
+};
+
+
